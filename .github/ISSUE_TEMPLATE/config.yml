@@ -1,5 +1,1 @@
 blank_issues_enabled: false
-contact_links:
-  - name: Vulnerabilità di sicurezza
-    url: https://github.com/nicorini/fattura-elettronica-ts/security/advisories/new
-    about: Segnalala in privato, non con una issue pubblica.
