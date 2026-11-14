@@ -35,6 +35,8 @@ jobs:
       - id: select-mode
         uses: changesets/action/select-mode@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
 
+  # CI on this pull request waits for "Approve and run": the repository asks approval for outside
+  # contributors, and the bot counts as one. CI ok is required to merge.
   version:
     name: Release pull request
     needs: select-mode
@@ -60,21 +62,6 @@ jobs:
           script: pnpm version-packages
           commit-message: "chore: release"
           pr-title: "chore: release"
-
-  # The pull request above comes from GITHUB_TOKEN, so CI doesn't start on it by itself and the
-  # check required on main would never arrive. A workflow_dispatch is the one event of
-  # GITHUB_TOKEN that starts a workflow: CI runs on the head of the pull request.
-  release-ci:
-    name: CI on the release pull request
-    needs: version
-    runs-on: ubuntu-latest
-    permissions:
-      actions: write # start the CI workflow
-    steps:
-      - env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-        run: gh workflow run ci.yml --ref "changeset-release/$GITHUB_REF_NAME"
 
   # Not changesets/action/publish: it runs npm publish, and we stage the release instead
   # (pnpm stage publish). The version reaches npm only after a maintainer approves it with 2FA, so
