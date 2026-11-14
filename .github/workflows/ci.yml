@@ -4,9 +4,6 @@ on:
   push:
     branches: [main]
   pull_request:
-  # Started by the Release workflow on its pull request: the events of GITHUB_TOKEN don't start
-  # workflows, workflow_dispatch excepted.
-  workflow_dispatch:
 
 permissions:
   contents: read
