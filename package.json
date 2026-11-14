@@ -1,0 +1,73 @@
+{
+  "name": "fattura-elettronica-ts",
+  "version": "0.0.1",
+  "description": "Fattura elettronica italiana (FatturaPA) in TypeScript: modello tipizzato 1:1 con l'XSD, lettura e scrittura dell'XML, validazione XSD e controlli del SdI con i codici ufficiali.",
+  "keywords": [
+    "fattura elettronica",
+    "fattura-elettronica",
+    "fatturazione elettronica",
+    "fatturapa",
+    "fattura pa",
+    "sdi",
+    "sistema di interscambio",
+    "agenzia delle entrate",
+    "e-invoice",
+    "e-invoicing",
+    "italy",
+    "xsd",
+    "typescript",
+    "xml"
+  ],
+  "homepage": "https://github.com/nicorini/fattura-elettronica-ts#readme",
+  "bugs": "https://github.com/nicorini/fattura-elettronica-ts/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nicorini/fattura-elettronica-ts.git"
+  },
+  "license": "MIT",
+  "author": "Nicolas Corini",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "size": "node scripts/size.ts",
+    "typecheck": "tsc && tsc -p test && tsc -p scripts",
+    "test": "vitest run",
+    "lint": "biome check",
+    "fix": "biome check --write",
+    "generate": "node scripts/generate/main.ts && biome format --write src/generated",
+    "version-packages": "changeset version && node scripts/changelog.ts CHANGELOG.md",
+    "specs:watch": "node scripts/spec-watch.ts"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "pnpm@12.18.0",
+  "dependencies": {
+    "@rgrove/parse-xml": "^5.2.0",
+    "big.js": "^7.0.1"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/cli": "0.18.5",
+    "@biomejs/biome": "2.6.7",
+    "@changesets/cli": "3.0.3",
+    "@types/big.js": "7.0.0",
+    "@types/node": "26.6.6",
+    "libxml2-wasm": "0.7.2",
+    "publint": "0.3.25",
+    "rolldown": "1.3.2",
+    "tsdown": "0.23.7",
+    "typescript": "7.0.2",
+    "vitest": "5.1.0"
+  }
+}

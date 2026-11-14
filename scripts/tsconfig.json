@@ -1,0 +1,11 @@
+{
+  // Development scripts run on Node: they get the Node types, which the library must not see.
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "types": ["node"],
+    // Node runs the scripts as they are, stripping the types: imports name the .ts files.
+    "allowImportingTsExtensions": true,
+    "isolatedDeclarations": false
+  },
+  "include": ["."]
+}

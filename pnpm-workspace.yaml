@@ -1,0 +1,12 @@
+# pnpm settings. The project is a single package: this file only holds options.
+
+# Don't install versions published less than a day ago (minutes).
+minimumReleaseAge: 1440
+# Reject a version published with weaker guarantees than earlier ones (e.g. no provenance).
+trustPolicy: no-downgrade
+
+# What dependencies may do beyond installing (scripts, agent skills).
+# The tsdown skill is denied: it points agents to remote instructions.
+permissions:
+  tsdown:
+    skills: false

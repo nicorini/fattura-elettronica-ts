@@ -1,0 +1,6 @@
+# File ufficiali copiati byte per byte: niente conversione dei fine riga.
+specs/** -text
+test/fixtures/** -text
+
+# Written by scripts/generate: collapsed in GitHub diffs.
+src/generated/** linguist-generated

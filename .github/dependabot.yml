@@ -1,0 +1,28 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    # Wait 7 days after a release: compromised versions are usually found and pulled by then.
+    cooldown:
+      default-days: 7
+    open-pull-requests-limit: 5
+    groups:
+      dependencies:
+        update-types: [minor, patch]
+    # Major updates are done by hand, after reading the changelog.
+    ignore:
+      - dependency-name: "*"
+        update-types: [version-update:semver-major]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    # Majors included: for actions they are almost always a bump of the bundled Node.
+    groups:
+      actions:
+        patterns: ["*"]

@@ -1,0 +1,25 @@
+name: Richiesta
+description: Una funzione nuova, o una regola fiscale che la libreria non controlla.
+labels: [needs-triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Prima di chiedere, leggi nel README cosa la libreria fa e cosa non fa.
+  - type: textarea
+    id: richiesta
+    attributes:
+      label: Cosa ti serve
+      description: "Cosa vorresti poter fare, e perché: il caso concreto aiuta più della soluzione."
+    validations:
+      required: true
+  - type: textarea
+    id: fonte
+    attributes:
+      label: Fonte, se è una regola fiscale
+      description: |
+        Una regola fiscale entra nella libreria solo con la sua fonte primaria: norma, circolare o
+        risoluzione dell'Agenzia delle Entrate, Specifiche tecniche. Indica il documento, il punto
+        o la pagina, e il link.
+    validations:
+      required: false

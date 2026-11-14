@@ -1,0 +1,129 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  # Started by the Release workflow on its pull request: the events of GITHUB_TOKEN don't start
+  # workflows, workflow_dispatch excepted.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # These checks don't depend on the Node version, so they run once, on the development version
+  # (.nvmrc).
+  quality:
+    name: Quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # Installs the pnpm version set in "packageManager".
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Format and lint
+        run: pnpm biome ci
+      - name: Typecheck
+        run: pnpm typecheck
+      # The committed code in src/generated must be exactly what the generator makes from the XSD.
+      - name: Generated code is up to date
+        run: |
+          pnpm generate
+          git status --porcelain -- src/generated
+          test -z "$(git status --porcelain -- src/generated)"
+      - name: Build
+        run: pnpm build
+      # The tarball must hold exactly the listed files: one more or one less fails the job.
+      - name: Package contents
+        run: |
+          pnpm pack --dry-run --json | jq -r '.files[].path' | LC_ALL=C sort > "$RUNNER_TEMP/pack.txt"
+          diff -u test/expected-pack.txt "$RUNNER_TEMP/pack.txt"
+      # What consumers get: exports, types and files as npm, bundlers and TypeScript read them.
+      - name: Package lint (publint)
+        run: pnpm exec publint --strict
+      - name: Types for ESM consumers (attw)
+        run: pnpm exec attw --pack . --profile esm-only
+      # The main entry with its dependencies, minified and gzipped, against the limit in the script.
+      - name: Size of the main entry
+        run: pnpm size
+
+  test:
+    name: Test (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [22, 24, 26]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ matrix.node }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
+
+  # The tarball as published, installed in an empty project and imported by Bun and Deno.
+  smoke:
+    name: Smoke (${{ matrix.runtime }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        runtime: [bun, deno]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - name: Install the tarball in an empty project
+        run: |
+          pnpm pack --pack-destination "$RUNNER_TEMP"
+          mkdir "$RUNNER_TEMP/consumer"
+          cp test/smoke/smoke.mjs test/fixtures/official/IT01234567890_FPR01.xml "$RUNNER_TEMP/consumer/"
+          cd "$RUNNER_TEMP/consumer"
+          npm init -y
+          npm install --no-audit --no-fund "$RUNNER_TEMP"/fattura-elettronica-ts-*.tgz
+      - if: matrix.runtime == 'bun'
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+      - if: matrix.runtime == 'bun'
+        working-directory: ${{ runner.temp }}/consumer
+        run: bun smoke.mjs IT01234567890_FPR01.xml
+      - if: matrix.runtime == 'deno'
+        uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+      - if: matrix.runtime == 'deno'
+        working-directory: ${{ runner.temp }}/consumer
+        run: deno run --allow-read smoke.mjs IT01234567890_FPR01.xml
+
+  # The only check required on main: the list of jobs above can change without touching the
+  # ruleset.
+  ci-ok:
+    name: CI ok
+    if: always()
+    needs: [quality, test, smoke]
+    runs-on: ubuntu-latest
+    steps:
+      - if: >-
+          contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+          || contains(needs.*.result, 'skipped')
+        run: exit 1

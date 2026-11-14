@@ -1,0 +1,59 @@
+name: Fattura scartata dal SdI
+description: Il Sistema di Interscambio ha scartato una fattura costruita o validata con la libreria.
+labels: [needs-triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Grazie: uno scarto che la libreria non ha previsto è la segnalazione più utile.
+        **Non allegare fatture reali.** Sostituisci nomi, partite IVA, codici fiscali, indirizzi e
+        IBAN con valori inventati, poi controlla che la fattura anonimizzata venga ancora scartata
+        con lo stesso codice, se puoi.
+  - type: input
+    id: codice
+    attributes:
+      label: Codice di scarto
+      description: Il codice dell'errore nella notifica di scarto del SdI.
+      placeholder: "00423"
+    validations:
+      required: true
+  - type: textarea
+    id: messaggio
+    attributes:
+      label: Messaggio della notifica di scarto
+      description: La descrizione dell'errore, copiata dalla notifica.
+    validations:
+      required: true
+  - type: dropdown
+    id: formato
+    attributes:
+      label: Formato della fattura
+      options:
+        - FPR12 (tra privati)
+        - FPA12 (verso la Pubblica Amministrazione)
+    validations:
+      required: true
+  - type: textarea
+    id: xml
+    attributes:
+      label: XML anonimizzato
+      description: La fattura scartata, con i dati personali sostituiti.
+      render: xml
+    validations:
+      required: true
+  - type: textarea
+    id: comportamento
+    attributes:
+      label: Cosa ha fatto la libreria
+      description: |
+        Come hai prodotto o controllato la fattura (`build`, `validate`…) e cosa ha risposto: nessun
+        problema, oppure quali codici.
+    validations:
+      required: true
+  - type: input
+    id: versione
+    attributes:
+      label: Versione della libreria
+      placeholder: "0.1.0"
+    validations:
+      required: true

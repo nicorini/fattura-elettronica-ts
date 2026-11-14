@@ -1,0 +1,45 @@
+name: Bug
+description: La libreria si comporta in modo diverso da quanto documentato.
+labels: [needs-triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Se il SdI ha scartato una fattura costruita o validata con la libreria, usa il modello
+        «Fattura scartata dal SdI». Non allegare fatture reali: sostituisci nomi, partite IVA,
+        codici fiscali, indirizzi e IBAN con valori inventati.
+  - type: textarea
+    id: descrizione
+    attributes:
+      label: Cosa succede
+      description: Il problema, in breve.
+    validations:
+      required: true
+  - type: textarea
+    id: riproduzione
+    attributes:
+      label: Come riprodurlo
+      description: Il codice più corto che mostra il problema, con i dati di ingresso.
+      render: ts
+    validations:
+      required: true
+  - type: textarea
+    id: atteso
+    attributes:
+      label: Cosa ti aspettavi
+    validations:
+      required: true
+  - type: input
+    id: versione
+    attributes:
+      label: Versione della libreria
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: input
+    id: runtime
+    attributes:
+      label: Runtime e versione
+      placeholder: "Node 24.11, Bun 1.3, Deno 2.5, Chrome 142…"
+    validations:
+      required: true

@@ -1,0 +1,10 @@
+{
+  // Tests run on Node and read fixtures from disk: they get the Node types, which the library
+  // must not see.
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "isolatedDeclarations": false
+  },
+  "include": ["."]
+}

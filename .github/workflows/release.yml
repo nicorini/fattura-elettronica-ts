@@ -1,0 +1,124 @@
+name: Release
+
+# On every push to main, Changesets picks what to do:
+# - pending changesets: open or update the "chore: release" pull request (version and CHANGELOG);
+# - none, and the version in package.json is not on npm yet (that pull request was merged):
+#   publish it;
+# - otherwise nothing.
+on:
+  push:
+    branches: [main]
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  select-mode:
+    name: Select mode
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      mode: ${{ steps.select-mode.outputs.mode }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+      - run: pnpm install --frozen-lockfile
+      - id: select-mode
+        uses: changesets/action/select-mode@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
+
+  version:
+    name: Release pull request
+    needs: select-mode
+    if: needs.select-mode.outputs.mode == 'version'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # commit the new version on the pull request branch
+      pull-requests: write # open or update the pull request
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      # No dependency cache in the jobs that write: a poisoned cache could reach the release.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+      - run: pnpm install --frozen-lockfile
+      - uses: changesets/action/version@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
+        with:
+          # changeset version, then the CHANGELOG headings in Italian.
+          script: pnpm version-packages
+          commit-message: "chore: release"
+          pr-title: "chore: release"
+
+  # The pull request above comes from GITHUB_TOKEN, so CI doesn't start on it by itself and the
+  # check required on main would never arrive. A workflow_dispatch is the one event of
+  # GITHUB_TOKEN that starts a workflow: CI runs on the head of the pull request.
+  release-ci:
+    name: CI on the release pull request
+    needs: version
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write # start the CI workflow
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh workflow run ci.yml --ref "changeset-release/$GITHUB_REF_NAME"
+
+  # Not changesets/action/publish: it runs npm publish, and we stage the release instead
+  # (pnpm stage publish). The version reaches npm only after a maintainer approves it with 2FA, so
+  # a stolen GitHub account or a malicious commit is not enough to publish. Trusted publishing
+  # (OIDC, id-token below) replaces the npm token, and adds provenance on its own.
+  publish:
+    name: Publish
+    needs: select-mode
+    if: needs.select-mode.outputs.mode == 'publish'
+    runs-on: ubuntu-latest
+    environment: npm
+    permissions:
+      contents: write # create the tag and the GitHub release
+      id-token: write # trusted publishing on npm
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      # The notes are this version's section of CHANGELOG.md. Checked before staging, so that
+      # without notes nothing reaches npm and no empty GitHub release is created.
+      - name: Release notes
+        run: |
+          version=$(jq -r .version package.json)
+          awk -v heading="## $version" '$0 == heading { found = 1; next } /^## / { found = 0 } found' \
+            CHANGELOG.md > "$RUNNER_TEMP/notes.md"
+          if ! grep -q '[^[:space:]]' "$RUNNER_TEMP/notes.md"; then
+            echo "::error file=CHANGELOG.md::No release notes for $version (heading \"## $version\")."
+            exit 1
+          fi
+      # The workflow only runs on main: the git checks would only repeat that.
+      - name: Stage on npm
+        run: pnpm stage publish --access public --provenance --no-git-checks
+      - name: GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          version=$(jq -r .version package.json)
+          gh release create "v$version" --target "$GITHUB_SHA" --title "v$version" \
+            --notes-file "$RUNNER_TEMP/notes.md"

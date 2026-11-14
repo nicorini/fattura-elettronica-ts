@@ -1,0 +1,124 @@
+[
+  {
+    "kind": "page",
+    "name": "Formato FatturaPA (fatturapa.gov.it): XSD, esempi e specifiche del formato",
+    "url": "https://www.fatturapa.gov.it/it/norme-e-regole/documentazione-fattura-elettronica/formato-fatturapa/",
+    "include": "\\.(pdf|xsd|xml|zip)$",
+    "links": [
+      "https://www.fatturapa.gov.it/export/documenti/Specifiche_tecniche_del_formato_FatturaPA_V1.3.2.pdf",
+      "https://www.fatturapa.gov.it/export/documenti/fatturapa/v1.2.2/RappresentazioneTabellareFattOrdinariav123.pdf",
+      "https://www.fatturapa.gov.it/export/documenti/fatturapa/v1.2.2/Rappresentazione_Tabellare_FattOrdinaria_V1.2.2.pdf",
+      "https://www.fatturapa.gov.it/export/documenti/fatturapa/v1.2.2/Schema_del_file_xml_FatturaPA_v1.2.2.xsd",
+      "https://www.fatturapa.gov.it/export/documenti/fatturapa/v1.2/IT01234567890_FPA01.xml",
+      "https://www.fatturapa.gov.it/export/documenti/fatturapa/v1.2/IT01234567890_FPA02.xml",
+      "https://www.fatturapa.gov.it/export/documenti/fatturapa/v1.2/IT01234567890_FPA03.xml",
+      "https://www.fatturapa.gov.it/export/documenti/fatturapa/v1.2/IT01234567890_FPR01.xml",
+      "https://www.fatturapa.gov.it/export/documenti/fatturapa/v1.2/IT01234567890_FPR02.xml",
+      "https://www.fatturapa.gov.it/export/documenti/fatturapa/v1.2/IT01234567890_FPR03.xml",
+      "https://www.fatturapa.gov.it/export/documenti/fatturapa/v1.4/RappresentazioneTabellareFattOrdinaria-1.pdf",
+      "https://www.fatturapa.gov.it/export/documenti/fatturapa/v1.4/RappresentazioneTabellareFattSemplificata-1.pdf",
+      "https://www.fatturapa.gov.it/export/documenti/fatturapa/v1.4/Schema_VFPA12_V1.2.3.xsd",
+      "https://www.fatturapa.gov.it/export/documenti/fatturapa/v1.4/Schema_VFPR12_v1.2.3.xsd",
+      "https://www.fatturapa.gov.it/export/documenti/fatturapa/v1.4/Schema_VFSM10v_1.0.2.xsd",
+      "https://www.fatturapa.gov.it/export/documenti/fatturapa/v1.4/Specifiche_tecniche_del_formato_FatturaPA_V1.4.pdf"
+    ]
+  },
+  {
+    "kind": "page",
+    "name": "Documentazione SdI (fatturapa.gov.it): Elenco controlli e Specifiche tecniche SdI",
+    "url": "https://www.fatturapa.gov.it/it/norme-e-regole/DocumentazioneSDI/",
+    "include": "\\.(pdf|xsd|xml|zip)$",
+    "links": [
+      "https://26.2.138.109/.galleries/documenti/Elenco_Controlli_versione_1.7.pdf",
+      "https://26.2.138.109/.galleries/documenti/Specifiche_tecniche_SdI_v1.8.1.pdf",
+      "https://www.fatturapa.gov.it/export/documenti/Elenco-Controlli-versione-v1.9.pdf",
+      "https://www.fatturapa.gov.it/export/documenti/Elenco_Controlli_version_1.8.pdf",
+      "https://www.fatturapa.gov.it/export/documenti/SDI_SFTP_Massivi_v2.pdf",
+      "https://www.fatturapa.gov.it/export/documenti/Specifiche-tecniche-SdI-versione-1.8.3.pdf",
+      "https://www.fatturapa.gov.it/export/documenti/Specifiche-tecniche-relative-al-Sistema-di-Interscambio-versione-1.8.4.pdf",
+      "https://www.fatturapa.gov.it/export/documenti/Specifiche_tecniche_SdI_v1.8.2.pdf",
+      "https://www.fatturapa.gov.it/export/documenti/esempio_csr.pdf",
+      "https://www.fatturapa.gov.it/export/documenti/fatturapa/v1.4/Elenco-Controlli-versione-2.0.pdf",
+      "https://www.fatturapa.gov.it/export/documenti/ftp/v1.0/FtpTypes_v1.1.xsd",
+      "https://www.fatturapa.gov.it/export/documenti/ftp/v1.3/FtpTypes_v1.2.xsd",
+      "https://www.fatturapa.gov.it/export/documenti/ftp/v1.3/Specifiche_tecniche_FTP_v1.3.pdf",
+      "https://www.fatturapa.gov.it/export/documenti/ftp/v2.0/FtpTypes_v2.0.xsd",
+      "https://www.fatturapa.gov.it/export/documenti/ftp/v4.x/SMQREsitoRichiestaTypes_v1.0.xsd",
+      "https://www.fatturapa.gov.it/export/documenti/ftp/v4.x/SMQRListaRichiesteReportQuadraturaTypes_v1.0.xsd",
+      "https://www.fatturapa.gov.it/export/documenti/ftp/v4.x/Specifiche_Tecniche_FTP_v4.3.pdf",
+      "https://www.fatturapa.gov.it/export/documenti/ftp/v4.x/Specifiche_tecniche_FTP_v4.0.pdf",
+      "https://www.fatturapa.gov.it/export/documenti/ftp/v4.x/Specifiche_tecniche_FTP_v4.1.1.pdf",
+      "https://www.fatturapa.gov.it/export/documenti/ftp/v4.x/Specifiche_tecniche_FTP_v4.2.pdf",
+      "https://www.fatturapa.gov.it/export/documenti/messaggi/v1.0/IT01234567890_11111_AT_001.xml",
+      "https://www.fatturapa.gov.it/export/documenti/messaggi/v1.0/IT01234567890_11111_DT_001.xml",
+      "https://www.fatturapa.gov.it/export/documenti/messaggi/v1.0/IT01234567890_11111_EC_001.xml",
+      "https://www.fatturapa.gov.it/export/documenti/messaggi/v1.0/IT01234567890_11111_MC_001.xml",
+      "https://www.fatturapa.gov.it/export/documenti/messaggi/v1.0/IT01234567890_11111_MT_001.xml",
+      "https://www.fatturapa.gov.it/export/documenti/messaggi/v1.0/IT01234567890_11111_NE_001.xml",
+      "https://www.fatturapa.gov.it/export/documenti/messaggi/v1.0/IT01234567890_11111_NS_001.xml",
+      "https://www.fatturapa.gov.it/export/documenti/messaggi/v1.0/IT01234567890_11111_RC_001.xml",
+      "https://www.fatturapa.gov.it/export/documenti/messaggi/v1.0/IT01234567890_11111_SE_001.xml",
+      "https://www.fatturapa.gov.it/export/documenti/messaggi/v1.1/MessaggiTypes_v1.1.xsd",
+      "https://www.fatturapa.gov.it/export/documenti/ws/QuadraturaWSTypes_v1.0.xsd",
+      "https://www.fatturapa.gov.it/export/documenti/ws/ricezione/v1.0/RicezioneTypes_v1.0.xsd",
+      "https://www.fatturapa.gov.it/export/documenti/ws/ricezione/v3.x/Istruzioni-per-il-servizio-SDICoop-Ricezione-versione3.3.pdf",
+      "https://www.fatturapa.gov.it/export/documenti/ws/trasmissione/v1.0/TrasmissioneTypes_v1.0.xsd",
+      "https://www.fatturapa.gov.it/export/documenti/ws/trasmissione/v1.0/TrasmissioneTypes_v1.1.xsd",
+      "https://www.fatturapa.gov.it/export/documenti/ws/trasmissione/v2.0/DatiFatturaMessaggi_v2.0.xsd",
+      "https://www.fatturapa.gov.it/export/documenti/ws/trasmissione/v2.0/TrasmissioneFileTypes_v2.0.xsd",
+      "https://www.fatturapa.gov.it/export/documenti/ws/trasmissione/v3.x/Istruzioni-per-il-servizio-SDICoop-Trasmissione-versione3.3.pdf"
+    ]
+  },
+  {
+    "kind": "page",
+    "name": "Allegato A, specifiche tecniche (agenziaentrate.gov.it)",
+    "url": "https://www.agenziaentrate.gov.it/portale/fatturazione-elettronica-e-dati-fatture-transfrontaliere-new",
+    "include": "specifiche-tecniche-versione|/documents/d/guest/|\\.pdf$",
+    "links": [
+      "https://www.agenziaentrate.gov.it/portale/specifiche-tecniche-versione-1.5",
+      "https://www.agenziaentrate.gov.it/portale/specifiche-tecniche-versione-1.6.3",
+      "https://www.agenziaentrate.gov.it/portale/specifiche-tecniche-versione-1.6.4-provvedimento-del-23-dicembre-2021",
+      "https://www.agenziaentrate.gov.it/portale/specifiche-tecniche-versione-1.7",
+      "https://www.agenziaentrate.gov.it/portale/specifiche-tecniche-versione-1.7.1",
+      "https://www.agenziaentrate.gov.it/portale/specifiche-tecniche-versione-1.8",
+      "https://www.agenziaentrate.gov.it/portale/specifiche-tecniche-versione-1.9",
+      "https://www.agenziaentrate.gov.it/portale/specifiche-tecniche-versione-1.9.1-%C2%A0-utilizzabili-dal-15-maggio-2026-"
+    ]
+  },
+  {
+    "kind": "file",
+    "name": "Schema XSD FatturaPA 1.2.3 (FPA12)",
+    "url": "https://www.fatturapa.gov.it/export/documenti/fatturapa/v1.4/Schema_VFPA12_V1.2.3.xsd",
+    "sha256": "152944f6eef9f5d69ef6e955ee173b32142b00a8c1c5222fc97dfab5910e8a8c"
+  },
+  {
+    "kind": "file",
+    "name": "Schema XSD FatturaPA 1.2.3 (FPR12)",
+    "url": "https://www.fatturapa.gov.it/export/documenti/fatturapa/v1.4/Schema_VFPR12_v1.2.3.xsd",
+    "sha256": "152944f6eef9f5d69ef6e955ee173b32142b00a8c1c5222fc97dfab5910e8a8c"
+  },
+  {
+    "kind": "file",
+    "name": "Specifiche tecniche del formato FatturaPA 1.4",
+    "url": "https://www.fatturapa.gov.it/export/documenti/fatturapa/v1.4/Specifiche_tecniche_del_formato_FatturaPA_V1.4.pdf",
+    "sha256": "8adde9acf0596f14e2cce66f3c1a4d36ce4e13f65582b45c333fe28eee4d93dc"
+  },
+  {
+    "kind": "file",
+    "name": "Elenco controlli 2.0",
+    "url": "https://www.fatturapa.gov.it/export/documenti/fatturapa/v1.4/Elenco-Controlli-versione-2.0.pdf",
+    "sha256": "a3ec6b4b5f74c43bca8c5849f49b33d2c9b0784c5d227f32a25a81b1d7caf9f2"
+  },
+  {
+    "kind": "file",
+    "name": "Specifiche tecniche SdI 1.8.4",
+    "url": "https://www.fatturapa.gov.it/export/documenti/Specifiche-tecniche-relative-al-Sistema-di-Interscambio-versione-1.8.4.pdf",
+    "sha256": "f3357ea93ee12fe4071ad73c422885756fbcf2d192f447c843fa5b79ceb6ef90"
+  },
+  {
+    "kind": "file",
+    "name": "Allegato A, specifiche tecniche 1.9.1",
+    "url": "https://www.agenziaentrate.gov.it/portale/documents/d/guest/allegato-a-specifiche-tecniche-vers-1-9-1",
+    "sha256": "746f58dc103162c34f6caf92446b6232526639b363402538dbe13c6a2d399383"
+  }
+]

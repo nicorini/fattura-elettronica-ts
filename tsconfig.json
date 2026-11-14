@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    // No Node or browser APIs: the library is universal.
+    "target": "es2023",
+    "lib": ["es2023"],
+    "types": [],
+
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "verbatimModuleSyntax": true,
+
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+
+    // Explicit public types, so tsdown generates the .d.ts with Oxc instead of TypeScript.
+    "declaration": true,
+    "isolatedDeclarations": true,
+
+    // tsc only checks: tsdown builds.
+    "noEmit": true,
+    "skipLibCheck": true
+  },
+  "include": ["src"]
+}
