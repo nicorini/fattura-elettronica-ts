@@ -385,6 +385,102 @@ describe('DatiCassaPrevidenziale', () => {
   });
 });
 
+type RitenutaInput = NonNullable<
+  BodyInput['DatiGenerali']['DatiGeneraliDocumento']['DatiRitenuta']
+>[number];
+
+/** `input` with these DatiRitenuta. */
+function withRitenute(input: CreateInvoiceInput, ...ritenute: RitenutaInput[]): CreateInvoiceInput {
+  inputBody(input).DatiGenerali.DatiGeneraliDocumento.DatiRitenuta = ritenute;
+  return input;
+}
+
+function ritenute(fattura: FatturaElettronica) {
+  return firstBody(fattura).DatiGenerali.DatiGeneraliDocumento.DatiRitenuta ?? [];
+}
+
+// The Ritenuta flag of a line: "linea soggetta a ritenuta"; of a cassa: "il contributo cassa è
+// soggetto a ritenuta" (Specifiche tecniche FatturaPA 1.4, pagg. 19 and 26,
+// https://www.fatturapa.gov.it/export/documenti/fatturapa/v1.4/Specifiche_tecniche_del_formato_FatturaPA_V1.4.pdf).
+// The base is what the flags mark; the rate is the one the user writes.
+describe('DatiRitenuta', () => {
+  // A professional's fee bears "una ritenuta del 20 per cento a titolo di acconto" (art. 25 DPR
+  // 600/73; from 2027 art. 38, c. 1 D.Lgs. 33/2025, GU n. 71 del 26/3/2025, S.O. n. 8/L). The base
+  // holds the fees and the rivalsa INPS of the gestione separata, but not the spese anticipate in
+  // nome e per conto del cliente (AdE, "Importi su cui si applica la ritenuta",
+  // https://www.agenziaentrate.gov.it/portale/schede/pagamenti/versamento-modello-f24-ritenute-su-reddito-di-lavoro-autonomo-f24_rit_red_lav_aut/importi-su-cui-si-applica-la-ritenuta-f24_rit_red_lav_aut).
+  test('computes RT01 at 20% on the fees and the rivalsa INPS, leaving out the N1 expenses', () => {
+    const input = withRitenute(
+      withCasse(
+        [
+          { PrezzoUnitario: '1000.00', AliquotaIVA: '22.00', Ritenuta: 'SI' },
+          { PrezzoUnitario: '55.30', AliquotaIVA: '0.00', Natura: 'N1' },
+        ],
+        {
+          TipoCassa: 'TC22',
+          AlCassa: '4.00',
+          ImponibileCassa: '1000.00',
+          AliquotaIVA: '22.00',
+          Ritenuta: 'SI',
+        },
+      ),
+      { TipoRitenuta: 'RT01', AliquotaRitenuta: '20.00', CausalePagamento: 'A' },
+    );
+    const fattura = create(input);
+    // (1000 + 40) × 20% = 208.00
+    expect(ritenute(fattura)).toEqual([
+      {
+        TipoRitenuta: 'RT01',
+        ImportoRitenuta: '208.00',
+        AliquotaRitenuta: '20.00',
+        CausalePagamento: 'A',
+      },
+    ]);
+  });
+
+  // Out of the base: "l'eventuale addebito in via di rivalsa del contributo per la cassa
+  // nazionale" (the same AdE page), the 4% contributo integrativo of a professional cassa.
+  test('leaves out a professional cassa without Ritenuta SI', () => {
+    const input = withRitenute(
+      withCasse([{ PrezzoUnitario: '1250.00', AliquotaIVA: '22.00', Ritenuta: 'SI' }], {
+        TipoCassa: 'TC04',
+        AlCassa: '4.00',
+        ImponibileCassa: '1250.00',
+        AliquotaIVA: '22.00',
+      }),
+      { TipoRitenuta: 'RT01', AliquotaRitenuta: 20, CausalePagamento: 'A' },
+    );
+    const fattura = create(input);
+    expect(casse(fattura)[0]?.ImportoContributoCassa).toBe('50.00');
+    // 1250 × 20% = 250.00; the riepilogo and the total keep the cassa and ignore the ritenuta
+    expect(ritenute(fattura)[0]?.ImportoRitenuta).toBe('250.00');
+    expect(ritenute(fattura)[0]?.AliquotaRitenuta).toBe('20.00');
+    expect(servizi(fattura).DatiRiepilogo).toEqual([
+      { AliquotaIVA: '22.00', ImponibileImporto: '1300.00', Imposta: '286.00' },
+    ]);
+    expect(totale(fattura)).toBe('1586.00');
+  });
+
+  // The withholding of an agent is "commisurata al 50 per cento dell'ammontare delle provvigioni"
+  // (art. 25-bis, c. 2 DPR 600/73; from 2027 art. 39, c. 2 D.Lgs. 33/2025) at the rate of the first
+  // IRPEF bracket, 23% (AdE, "Aliquote e calcolo dell'Irpef",
+  // https://www.agenziaentrate.gov.it/portale/imposta-sul-reddito-delle-persone-fisiche-irpef-/aliquote-e-calcolo-dell-irpef).
+  // The format doesn't say which share: the user writes the amount, and it stays.
+  test('keeps an ImportoRitenuta written by hand, as for the reduced base of an agent', () => {
+    const input = withRitenute(
+      withLines({ PrezzoUnitario: '750.00', AliquotaIVA: '22.00', Ritenuta: 'SI' }),
+      {
+        TipoRitenuta: 'RT01',
+        ImportoRitenuta: 86.25,
+        AliquotaRitenuta: '23.00',
+        CausalePagamento: 'A',
+      },
+    );
+    // 750 × 50% × 23% = 86.25, less than 750 × 23% = 172.50
+    expect(ritenute(create(input))[0]?.ImportoRitenuta).toBe('86.25');
+  });
+});
+
 // ImportoTotaleDocumento: "Importo totale del documento al netto dell'eventuale sconto e
 // comprensivo di imposta a debito del cessionario / committente" (Rappresentazione tabellare del
 // tracciato FatturaPA, 2.1.1.9,
@@ -542,6 +638,46 @@ describe('CreateInvoiceError', () => {
         code: 'create.imponibileCassa',
         path: `${DOCUMENTO}.DatiCassaPrevidenziale[${index}].ImponibileCassa`,
         message: expect.stringContaining('ImportoContributoCassa'),
+      })),
+    );
+  });
+
+  // The library computes only a single RT01 or RT02 (ritenuta persone fisiche / giuridiche,
+  // Specifiche tecniche FatturaPA 1.4, pag. 53). RT03-RT06 are contributi previdenziali whose
+  // amount depends on yearly ceilings the invoice doesn't hold, and with more blocks the format
+  // doesn't say which one a Ritenuta flag belongs to.
+  test('create.importoRitenuta for an RT03-RT06 block without ImportoRitenuta', () => {
+    const input = withRitenute(withLines({ PrezzoUnitario: '1000.00', AliquotaIVA: '22.00' }), {
+      TipoRitenuta: 'RT04',
+      AliquotaRitenuta: '8.50',
+      CausalePagamento: 'ZO',
+    });
+    expect(problemsOf(() => createInvoice(input))).toEqual([
+      {
+        code: 'create.importoRitenuta',
+        path: `${DOCUMENTO}.DatiRitenuta[0].ImportoRitenuta`,
+        message: expect.stringContaining('RT04'),
+      },
+    ]);
+  });
+
+  test('create.importoRitenuta for each block without ImportoRitenuta, when there are more', () => {
+    const input = withRitenute(
+      withLines({ PrezzoUnitario: '1000.00', AliquotaIVA: '22.00', Ritenuta: 'SI' }),
+      { TipoRitenuta: 'RT01', AliquotaRitenuta: '20.00', CausalePagamento: 'A' },
+      {
+        TipoRitenuta: 'RT04',
+        ImportoRitenuta: '85.00',
+        AliquotaRitenuta: '8.50',
+        CausalePagamento: 'ZO',
+      },
+      { TipoRitenuta: 'RT02', AliquotaRitenuta: '20.00', CausalePagamento: 'A' },
+    );
+    expect(problemsOf(() => createInvoice(input))).toEqual(
+      [0, 2].map((index) => ({
+        code: 'create.importoRitenuta',
+        path: `${DOCUMENTO}.DatiRitenuta[${index}].ImportoRitenuta`,
+        message: expect.stringContaining('più DatiRitenuta'),
       })),
     );
   });

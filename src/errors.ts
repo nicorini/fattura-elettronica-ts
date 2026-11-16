@@ -85,6 +85,8 @@ export interface CreateInvoiceProblem {
  *   Importo and Percentuale, or a negative Importo (`Tipo` gives the direction).
  * - `create.imponibileCassa`: a DatiCassaPrevidenziale has neither ImponibileCassa nor
  *   ImportoContributoCassa: the base of the contributo is not something the library can pick.
+ * - `create.importoRitenuta`: a DatiRitenuta has no ImportoRitenuta and is not the only block, or
+ *   is not RT01 or RT02: `createInvoice` computes only the single RT01 or RT02.
  * - `create.importoTotaleDocumento`: the document has a ScontoMaggiorazione and no
  *   ImportoTotaleDocumento, which `createInvoice` doesn't compute in that case.
  *

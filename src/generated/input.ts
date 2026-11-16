@@ -104,7 +104,8 @@ export interface DatiGeneraliDocumentoInput {
 /** `DatiRitenutaType` in the XSD. */
 export interface DatiRitenutaInput {
   TipoRitenuta: Model.TipoRitenuta;
-  ImportoRitenuta: string | number;
+  /** Computed by `createInvoice` when missing. */
+  ImportoRitenuta?: string | number;
   AliquotaRitenuta: string | number;
   CausalePagamento: Model.CausalePagamento;
 }

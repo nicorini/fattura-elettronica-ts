@@ -11,6 +11,9 @@ test('createInvoice fills every computed field of the generator, and no other is
     documento.DatiCassaPrevidenziale = [
       { TipoCassa: 'TC04', AlCassa: '4.00', ImponibileCassa: '100.00', AliquotaIVA: '22.00' },
     ];
+    documento.DatiRitenuta = [
+      { TipoRitenuta: 'RT01', AliquotaRitenuta: '20.00', CausalePagamento: 'A' },
+    ];
   }
   const fattura: FatturaElettronica = createInvoice(input);
   const [body] = fattura.FatturaElettronicaBody;
@@ -20,6 +23,7 @@ test('createInvoice fills every computed field of the generator, and no other is
     DatiBeniServizi: body?.DatiBeniServizi,
     DatiRiepilogo: body?.DatiBeniServizi.DatiRiepilogo[0],
     DatiCassaPrevidenziale: body?.DatiGenerali.DatiGeneraliDocumento.DatiCassaPrevidenziale?.[0],
+    DatiRitenuta: body?.DatiGenerali.DatiGeneraliDocumento.DatiRitenuta?.[0],
     DatiGeneraliDocumento: body?.DatiGenerali.DatiGeneraliDocumento,
   };
   expect(Object.keys(COMPUTED_FIELDS).sort()).toEqual(Object.keys(blocks).sort());

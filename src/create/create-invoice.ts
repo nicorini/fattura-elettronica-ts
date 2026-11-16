@@ -7,6 +7,7 @@ import { convertNumbers } from './numbers.js';
 import { fillPrezzoTotale } from './prezzo-totale.js';
 import { Problems } from './problems.js';
 import { fillDatiRiepilogo } from './riepilogo.js';
+import { fillImportoRitenuta } from './ritenuta.js';
 import { fillImportoTotaleDocumento } from './totale.js';
 
 /**
@@ -19,7 +20,9 @@ import { fillImportoTotaleDocumento } from './totale.js';
  * order, × `Quantita`, 1 if missing); `ImportoContributoCassa` of each `DatiCassaPrevidenziale`
  * (`ImponibileCassa` × `AlCassa` / 100, with `ImponibileCassa` required); one `DatiRiepilogo` per
  * `AliquotaIVA` and `Natura` of lines and `DatiCassaPrevidenziale`, in order of first appearance,
- * with `ImponibileImporto` (their sum plus its `Arrotondamento`) and `Imposta`;
+ * with `ImponibileImporto` (their sum plus its `Arrotondamento`) and `Imposta`; `ImportoRitenuta`
+ * of a single RT01 or RT02 `DatiRitenuta` (`AliquotaRitenuta` % of the `PrezzoTotale` of the lines
+ * and the `ImportoContributoCassa` of the `DatiCassaPrevidenziale` with `Ritenuta` SI);
  * `ImportoTotaleDocumento` (Σ `ImponibileImporto` + Σ `Imposta` + `Arrotondamento`), only without a
  * `ScontoMaggiorazione` of the document. A `DatiRiepilogo` of the input with the same `AliquotaIVA`
  * and `Natura` gives its fields (`EsigibilitaIVA`, `RiferimentoNormativo`, the amounts), and the
@@ -38,6 +41,7 @@ export function createInvoice(input: CreateInvoiceInput): FatturaElettronica {
     fillPrezzoTotale(body, problems);
     fillImportoContributoCassa(body, problems);
     fillDatiRiepilogo(body);
+    fillImportoRitenuta(body, problems);
     fillImportoTotaleDocumento(body, problems);
   }
   if (problems.list.length > 0) throw new CreateInvoiceError(problems.list);

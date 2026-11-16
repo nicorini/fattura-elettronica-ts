@@ -102,6 +102,7 @@ export const createCodes = [
   'create.number',
   'create.scontoAmbiguo',
   'create.imponibileCassa',
+  'create.importoRitenuta',
   'create.importoTotaleDocumento',
 ] as const;
 
