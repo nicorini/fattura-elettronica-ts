@@ -94,6 +94,7 @@ export const libraryWarningCodes = [
   'warn.codiceFiscale',
   'warn.idTrasmittenteMinuscolo',
   'warn.pecDestinatario',
+  'warn.bollo',
 ] as const;
 
 /** Problems of the input of createInvoice: the codes of `CreateInvoiceError`. */

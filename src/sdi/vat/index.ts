@@ -14,6 +14,7 @@ import { rule00437and00438 } from './00437-00438.js';
 import { rule00443, rule00443Warning } from './00443.js';
 import { rule00444, rule00444Warning } from './00444.js';
 import { rule00445 } from './00445.js';
+import { ruleBollo } from './bollo.js';
 import { ruleRiferimentoNormativo } from './riferimento-normativo.js';
 
 export const vatRules: readonly SdiRule[] = [
@@ -34,4 +35,5 @@ export const vatRules: readonly SdiRule[] = [
   rule00444Warning,
   rule00445,
   ruleRiferimentoNormativo,
+  ruleBollo,
 ];
