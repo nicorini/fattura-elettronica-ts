@@ -4,6 +4,7 @@
 // it. These helpers turn all that into "nothing to judge": the problem of structure is already
 // reported, and a check must never throw.
 import Big from 'big.js';
+import { codeLists } from '../generated/code-lists.js';
 import type {
   DatiAnagraficiCessionario,
   DatiCassaPrevidenziale,
@@ -150,4 +151,14 @@ export function toBig(value: unknown): Big | undefined {
 /** A rate as a key, so `22.00` and ` 22.00 ` group together; `undefined` if not a decimal. */
 export function rateKey(value: unknown): string | undefined {
   return toBig(value)?.toFixed(2);
+}
+
+const NATURE: ReadonlySet<unknown> = new Set(codeLists.Natura.map(({ code }) => code));
+
+/**
+ * Whether `value` is a Natura the XSD refuses (empty, unknown, not a string): nothing to judge for
+ * the checks on Natura, and not the same as no Natura.
+ */
+export function refusedNatura(value: unknown): boolean {
+  return value !== undefined && !NATURE.has(value);
 }
