@@ -1,5 +1,5 @@
 import type { Problem } from '../../problem.js';
-import { bodies, riepiloghi } from '../fields.js';
+import { bodies, refusedNatura, riepiloghi } from '../fields.js';
 import { libraryWarning, type SdiRule } from '../rule.js';
 import { SPECIFICHE_FORMATO, source } from '../sources.js';
 
@@ -11,7 +11,10 @@ export const ruleRiferimentoNormativo: SdiRule = (fattura) => {
   const problems: Problem[] = [];
   for (const body of bodies(fattura)) {
     for (const { block: riepilogo, path } of riepiloghi(body)) {
-      if (riepilogo.Natura === undefined || riepilogo.RiferimentoNormativo !== undefined) continue;
+      const { Natura, RiferimentoNormativo } = riepilogo;
+      if (Natura === undefined || refusedNatura(Natura) || RiferimentoNormativo !== undefined) {
+        continue;
+      }
       problems.push(
         libraryWarning(
           'warn.riferimentoNormativo',

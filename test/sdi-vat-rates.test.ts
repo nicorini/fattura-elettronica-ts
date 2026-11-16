@@ -382,3 +382,20 @@ describe('warn.riferimentoNormativo', () => {
     ]);
   });
 });
+
+// A Natura the XSD refuses is already xsd.enumeration: the checks on Natura don't judge it, as
+// with any value of the wrong form.
+describe('a Natura the XSD refuses', () => {
+  test.each([
+    ['', '22.00'],
+    ['', '0.00'],
+    ['N8', '22.00'],
+    ['N8', '0.00'],
+  ])('%j at %s is xsd.enumeration on line and summary, and nothing else', (natura, aliquota) => {
+    const fattura = withLine(aliquota, natura as DatiRiepilogo['Natura']);
+    expect(found(fattura).map(({ code, path }) => ({ code, path }))).toEqual([
+      { code: 'xsd.enumeration', path: `${LINEA}.Natura` },
+      { code: 'xsd.enumeration', path: `${RIEPILOGO}[0].Natura` },
+    ]);
+  });
+});

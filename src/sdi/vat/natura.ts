@@ -3,7 +3,7 @@
 // except where TipoDocumento TD16 allows both (lines and summaries only).
 import type { SdiErrorCode } from '../../codes.js';
 import type { Problem } from '../../problem.js';
-import { type Located, toBig } from '../fields.js';
+import { type Located, refusedNatura, toBig } from '../fields.js';
 import { sdiError } from '../rule.js';
 import { ELENCO_CONTROLLI, source } from '../sources.js';
 
@@ -28,7 +28,7 @@ export function checkNatura(
   const problems: Problem[] = [];
   for (const { block, path } of blocks) {
     const rate = toBig(block.AliquotaIVA);
-    if (rate === undefined) continue;
+    if (rate === undefined || refusedNatura(block.Natura)) continue;
     const hasNatura = block.Natura !== undefined;
     if (rate.eq(0) && !hasNatura) {
       problems.push(

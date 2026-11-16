@@ -1,5 +1,5 @@
 import type { Problem } from '../../problem.js';
-import { bodies, rateKey, riepiloghi, summarized } from '../fields.js';
+import { bodies, rateKey, refusedNatura, riepiloghi, summarized } from '../fields.js';
 import { type SdiRule, sdiError, sdiWarning } from '../rule.js';
 import { ELENCO_CONTROLLI, RAPPRESENTAZIONE_TABELLARE, source } from '../sources.js';
 
@@ -13,7 +13,7 @@ export const rule00444: SdiRule = (fattura) => {
     const nature = new Set<unknown>(riepiloghi(body).map(({ block }) => block.Natura));
     for (const { block, path } of summarized(body)) {
       const natura: unknown = block.Natura;
-      if (typeof natura !== 'string' || nature.has(natura)) continue;
+      if (typeof natura !== 'string' || refusedNatura(natura) || nature.has(natura)) continue;
       problems.push(
         sdiError(
           '00444',
@@ -39,7 +39,7 @@ export const rule00444Warning: SdiRule = (fattura) => {
     const nature = new Set<unknown>(found.map(({ block }) => block.Natura));
     for (const { block: riepilogo, path } of riepiloghi(body)) {
       const natura: unknown = riepilogo.Natura;
-      if (typeof natura !== 'string' || nature.has(natura)) continue;
+      if (typeof natura !== 'string' || refusedNatura(natura) || nature.has(natura)) continue;
       problems.push(
         sdiWarning(
           '00444',
