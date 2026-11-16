@@ -74,14 +74,15 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm test
 
-  # The tarball as published, installed in an empty project and imported by Bun and Deno.
+  # The tarball as published, installed in an empty project and imported by Bun, Deno, headless
+  # Chromium and workerd.
   smoke:
     name: Smoke (${{ matrix.runtime }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        runtime: [bun, deno]
+        runtime: [bun, deno, chromium, workerd]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -97,7 +98,8 @@ jobs:
         run: |
           pnpm pack --pack-destination "$RUNNER_TEMP"
           mkdir "$RUNNER_TEMP/consumer"
-          cp test/smoke/smoke.mjs test/fixtures/official/IT01234567890_FPR01.xml "$RUNNER_TEMP/consumer/"
+          cp test/smoke/check.mjs test/smoke/smoke.mjs test/smoke/worker.mjs test/smoke/workerd.capnp \
+            test/fixtures/official/IT01234567890_FPR01.xml "$RUNNER_TEMP/consumer/"
           cd "$RUNNER_TEMP/consumer"
           npm init -y
           npm install --no-audit --no-fund "$RUNNER_TEMP"/fattura-elettronica-ts-*.tgz
@@ -111,6 +113,28 @@ jobs:
       - if: matrix.runtime == 'deno'
         working-directory: ${{ runner.temp }}/consumer
         run: deno run --allow-read smoke.mjs IT01234567890_FPR01.xml
+      # A browser or a worker gets the package through a bundler, as in a frontend or edge build:
+      # check.mjs and the installed tarball become one file, without bare imports.
+      - if: matrix.runtime == 'chromium' || matrix.runtime == 'workerd'
+        name: Bundle the checks with the tarball
+        run: >-
+          pnpm exec rolldown "$RUNNER_TEMP/consumer/check.mjs" --platform browser
+          --file "$RUNNER_TEMP/consumer/smoke.js"
+      - if: matrix.runtime == 'chromium'
+        id: playwright
+        run: echo "version=$(jq -r .version node_modules/playwright-core/package.json)" >> "$GITHUB_OUTPUT"
+      # The browser build depends only on the version of playwright-core.
+      - if: matrix.runtime == 'chromium'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+      - if: matrix.runtime == 'chromium'
+        run: pnpm exec playwright-core install --only-shell chromium
+      - if: matrix.runtime == 'chromium'
+        run: node test/smoke/browser.mjs "$RUNNER_TEMP/consumer/smoke.js" test/fixtures/official/IT01234567890_FPR01.xml
+      - if: matrix.runtime == 'workerd'
+        run: pnpm exec workerd test "$RUNNER_TEMP/consumer/workerd.capnp"
 
   # The only check required on main: the list of jobs above can change without touching the
   # ruleset.
