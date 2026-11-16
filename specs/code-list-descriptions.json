@@ -1,0 +1,239 @@
+{
+  "sources": {
+    "cu": {
+      "name": "Istruzioni CU 2026, agg. 24/02/2026",
+      "url": "https://www.agenziaentrate.gov.it/portale/documents/20143/9602395/CU_istr_2026_agg+24+02.pdf/4184818b-05a3-acce-5956-70811c7d2233?t=1771947585334",
+      "sha256": "a6ccf7cf53edcbd0d084c2266868649f8d17c348644401b540efd5e3fc95e841",
+      "edition": "2026",
+      "yearly": true
+    },
+    "cu-2024": {
+      "name": "Istruzioni CU 2024",
+      "url": "https://www.agenziaentrate.gov.it/portale/documents/20143/5817509/CU+2024+_istruzioni.pdf/f7848bb5-49a0-fbec-79f7-1f6bc15fdf3a",
+      "sha256": "d95e99847b9aa16328058e7cc3f96ff545997232d76a39ac2efff18da244a254",
+      "edition": "2024"
+    },
+    "rappresentazione-tabellare": {
+      "name": "Rappresentazione tabellare della fattura ordinaria",
+      "url": "https://www.fatturapa.gov.it/export/documenti/fatturapa/v1.4/RappresentazioneTabellareFattOrdinaria-1.pdf",
+      "sha256": "dcca7728f3b32553b625cb4d3487118e87525e75d69b9ffb2c2d5f9eda998f1b",
+      "edition": "1.2.3"
+    }
+  },
+  "entries": [
+    {
+      "list": "CausalePagamento",
+      "code": "A",
+      "description": "prestazioni di lavoro autonomo rientranti nell’esercizio di arte o professione abituale",
+      "source": "cu",
+      "pages": "82"
+    },
+    {
+      "list": "CausalePagamento",
+      "code": "B",
+      "description": "utilizzazione economica, da parte dell’autore o dell’inventore, di opere dell’ingegno, di brevetti industriali e di processi, formule o informazioni relativi ad esperienze acquisite in campo industriale, commerciale o scientifico",
+      "source": "cu",
+      "pages": "82"
+    },
+    {
+      "list": "CausalePagamento",
+      "code": "C",
+      "description": "utili derivanti da contratti di associazione in partecipazione e da contratti di cointeressenza, quando l’apporto è costituito esclusivamente dalla prestazione di lavoro",
+      "source": "cu",
+      "pages": "82"
+    },
+    {
+      "list": "CausalePagamento",
+      "code": "D",
+      "description": "utili spettanti ai soci promotori ed ai soci fondatori delle società di capitali",
+      "source": "cu",
+      "pages": "82"
+    },
+    {
+      "list": "CausalePagamento",
+      "code": "E",
+      "description": "levata di protesti cambiari da parte dei segretari comunali",
+      "source": "cu",
+      "pages": "82"
+    },
+    {
+      "list": "CausalePagamento",
+      "code": "G",
+      "description": "indennità corrisposte per la cessazione di attività sportiva professionale",
+      "source": "cu",
+      "pages": "82"
+    },
+    {
+      "list": "CausalePagamento",
+      "code": "H",
+      "description": "indennità corrisposte per la cessazione dei rapporti di agenzia delle persone fisiche e delle società di persone con esclusione delle somme maturate entro il 31 dicembre 2003, già imputate per competenza e tassate come reddito d’impresa",
+      "source": "cu",
+      "pages": "82"
+    },
+    {
+      "list": "CausalePagamento",
+      "code": "I",
+      "description": "indennità corrisposte per la cessazione da funzioni notarili",
+      "source": "cu",
+      "pages": "82"
+    },
+    {
+      "list": "CausalePagamento",
+      "code": "L",
+      "description": "redditi derivanti dall’utilizzazione economica di opere dell’ingegno, di brevetti industriali e di processi, formule e informazioni relativi a esperienze acquisite in campo industriale, commerciale o scientifico, che sono percepiti dagli aventi causa a titolo gratuito (ad es. eredi e legatari dell’autore e inventore)",
+      "source": "cu",
+      "pages": "82"
+    },
+    {
+      "list": "CausalePagamento",
+      "code": "M",
+      "description": "prestazioni di lavoro autonomo non esercitate abitualmente",
+      "source": "cu",
+      "pages": "82"
+    },
+    {
+      "list": "CausalePagamento",
+      "code": "N",
+      "description": "le indennità di trasferta, i rimborsi forfetari di spesa, i premi e i compensi erogati ai direttori artistici ed ai collaboratori tecnici per prestazioni di natura non professionale da parte di cori, bande musicali e filodrammatiche che perseguono finalità dilettantistiche",
+      "source": "cu",
+      "pages": "82"
+    },
+    {
+      "list": "CausalePagamento",
+      "code": "O",
+      "description": "prestazioni di lavoro autonomo non esercitate abitualmente, per le quali non sussiste l’obbligo di iscrizione alla gestione separata ma con obbligo presso ex Pals",
+      "source": "cu",
+      "pages": "82"
+    },
+    {
+      "list": "CausalePagamento",
+      "code": "P",
+      "description": "compensi corrisposti a soggetti non residenti privi di stabile organizzazione per l’uso o la concessione in uso di attrezzature industriali, commerciali o scientifiche che si trovano nel territorio dello Stato ovvero a società svizzere o stabili organizzazioni di società svizzere che possiedono i requisiti di cui all’art. 15, comma 2 dell’Accordo tra la Comunità europea e la Confederazione svizzera del 26 ottobre 2004 (pubblicato in G.U.C.E. del 29 dicembre 2004 n. L385/30)",
+      "source": "cu",
+      "pages": "82"
+    },
+    {
+      "list": "CausalePagamento",
+      "code": "Q",
+      "description": "provvigioni corrisposte ad agente o rappresentante di commercio monomandatario",
+      "source": "cu",
+      "pages": "82"
+    },
+    {
+      "list": "CausalePagamento",
+      "code": "R",
+      "description": "provvigioni corrisposte ad agente o rappresentante di commercio plurimandatario",
+      "source": "cu",
+      "pages": "82"
+    },
+    {
+      "list": "CausalePagamento",
+      "code": "S",
+      "description": "provvigioni corrisposte a commissionario",
+      "source": "cu",
+      "pages": "83"
+    },
+    {
+      "list": "CausalePagamento",
+      "code": "T",
+      "description": "provvigioni corrisposte a mediatore",
+      "source": "cu",
+      "pages": "83"
+    },
+    {
+      "list": "CausalePagamento",
+      "code": "U",
+      "description": "provvigioni corrisposte a procacciatore di affari",
+      "source": "cu",
+      "pages": "83"
+    },
+    {
+      "list": "CausalePagamento",
+      "code": "V",
+      "description": "provvigioni corrisposte a incaricato per le vendite a domicilio; provvigioni corrisposte a incaricato per la vendita porta a porta e per la vendita ambulante di giornali quotidiani e periodici (L. 25 febbraio 1987, n. 67)",
+      "source": "cu",
+      "pages": "83"
+    },
+    {
+      "list": "CausalePagamento",
+      "code": "W",
+      "description": "corrispettivi erogati per prestazioni relative a contratti d’appalto cui si sono resi applicabili le disposizioni contenute nell’art. 25-ter del D.P.R. n. 600 del 29 settembre 1973",
+      "source": "cu",
+      "pages": "83",
+      "note": "Leaves out «nel 2025» after «erogati»: the year changes with every edition."
+    },
+    {
+      "list": "CausalePagamento",
+      "code": "X",
+      "description": "canoni corrisposti nel 2004 da società o enti residenti ovvero da stabili organizzazioni di società estere di cui all’art. 26-quater, comma 1, lett. a) e b) del D.P.R. 600 del 29 settembre 1973, a società o stabili organizzazioni di società, situate in altro stato membro dell’Unione Europea in presenza dei requisiti di cui al citato art. 26-quater, del D.P.R. 600 del 29 settembre 1973, per i quali è stato effettuato, nell’anno 2006, il rimborso della ritenuta ai sensi dell’art. 4 del D.Lgs. 30 maggio 2005 n. 143",
+      "source": "cu-2024",
+      "pages": "79",
+      "note": "Gone from the CU since the 2025 edition; the XSD still has it."
+    },
+    {
+      "list": "CausalePagamento",
+      "code": "Y",
+      "description": "canoni corrisposti dal 1° gennaio 2005 al 26 luglio 2005 da società o enti residenti ovvero da stabili organizzazioni di società estere di cui all’art. 26-quater, comma 1, lett. a) e b) del D.P.R. n. 600 del 29 settembre 1973, a società o stabili organizzazioni di società, situate in altro stato membro dell’Unione Europea in presenza dei requisiti di cui al citato art. 26-quater, del D.P.R. n. 600 del 29 settembre 1973, per i quali è stato effettuato, nell’anno 2006, il rimborso della ritenuta ai sensi dell’art. 4 del D.Lgs. 30 maggio 2005 n. 143",
+      "source": "cu-2024",
+      "pages": "79-80",
+      "note": "Gone from the CU since the 2025 edition; the XSD still has it."
+    },
+    {
+      "list": "CausalePagamento",
+      "code": "Z",
+      "description": "titolo diverso dai precedenti",
+      "source": "cu",
+      "pages": "83",
+      "note": "Text of ZO: the Specifiche tecniche del formato FatturaPA 1.2.2 (p. 53) and the Allegato A 1.5 say «per il codice ZO indicare il valore Z»."
+    },
+    {
+      "list": "CausalePagamento",
+      "code": "L1",
+      "description": "redditi derivanti dall’utilizzazione economica di opere dell’ingegno, di brevetti industriali e di processi, formule e informazioni relativi a esperienze acquisite in campo industriale, commerciale o scientifico, che sono percepiti da soggetti che abbiano acquistato a titolo oneroso i diritti alla loro utilizzazione",
+      "source": "cu",
+      "pages": "82"
+    },
+    {
+      "list": "CausalePagamento",
+      "code": "M1",
+      "description": "redditi derivanti dall’assunzione di obblighi di fare, di non fare o permettere",
+      "source": "cu",
+      "pages": "82"
+    },
+    {
+      "list": "CausalePagamento",
+      "code": "M2",
+      "description": "prestazioni di lavoro autonomo non esercitate abitualmente per le quali sussiste l’obbligo di iscrizione alla Gestione Separata ENPAPI",
+      "source": "cu",
+      "pages": "82"
+    },
+    {
+      "list": "CausalePagamento",
+      "code": "O1",
+      "description": "redditi derivanti dall’assunzione di obblighi di fare, di non fare o permettere, per le quali non sussiste l’obbligo di iscrizione alla gestione separata ma con obbligo presso ex Pals",
+      "source": "cu",
+      "pages": "82"
+    },
+    {
+      "list": "CausalePagamento",
+      "code": "V1",
+      "description": "redditi derivanti da attività commerciali non esercitate abitualmente (ad esempio, provvigioni corrisposte per prestazioni occasionali ad agente o rappresentante di commercio, mediatore, procacciatore d’affari)",
+      "source": "cu",
+      "pages": "82"
+    },
+    {
+      "list": "CausalePagamento",
+      "code": "ZO",
+      "description": "titolo diverso dai precedenti",
+      "source": "cu",
+      "pages": "83"
+    },
+    {
+      "list": "BolloVirtuale",
+      "code": "SI",
+      "description": "Bollo assolto ai sensi del decreto MEF 17 giugno 2014 (art. 6)",
+      "source": "rappresentazione-tabellare",
+      "pages": "4"
+    }
+  ]
+}

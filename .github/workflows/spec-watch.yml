@@ -1,7 +1,9 @@
 name: Spec watch
 
 # The Agenzia delle Entrate announces no updates: every week this compares the official pages and
-# files with the fingerprints in specs/sources.json and opens an issue if something changed.
+# files with the fingerprints in specs/sources.json, and checks that the code-list descriptions
+# follow the current edition of their yearly sources. Each check opens its own issue, so that one
+# left open doesn't hide the other.
 on:
   schedule:
     - cron: "17 6 * * 1"
@@ -28,6 +30,28 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
+      # First, as it needs no network: a page gone missing below must not stop it.
+      - name: Check the editions of the descriptions
+        id: editions
+        # A failure here must not stop the comparison of the fingerprints either.
+        continue-on-error: true
+        run: |
+          node scripts/spec-watch.ts --editions --report "$RUNNER_TEMP/editions.md"
+          if [ -f "$RUNNER_TEMP/editions.md" ]; then echo "changed=true" >> "$GITHUB_OUTPUT"; fi
+      - name: Open an issue on the editions
+        if: steps.editions.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TITLE: "Descrizioni dei codici su un'edizione passata: da aggiornare"
+        run: |
+          # One open issue is enough: it stays open until specs/ is updated.
+          open=$(gh issue list --state open --search "in:title \"$TITLE\"" --json number --jq length)
+          if [ "$open" -gt 0 ]; then
+            echo "An issue is already open: not opening another."
+          else
+            gh issue create --title "$TITLE" --body-file "$RUNNER_TEMP/editions.md" --label needs-triage
+          fi
       - name: Compare with the saved fingerprints
         id: compare
         run: |
@@ -38,14 +62,14 @@ jobs:
         with:
           name: sources
           path: ${{ runner.temp }}/sources.json
-      - name: Open an issue
+      - name: Open an issue on the fingerprints
         if: steps.compare.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           TITLE: "Specifiche ufficiali cambiate: da verificare"
         run: |
-          # One open issue is enough: it stays open until specs/sources.json is updated.
+          # One open issue is enough: it stays open until specs/ is updated.
           open=$(gh issue list --state open --search "in:title \"$TITLE\"" --json number --jq length)
           if [ "$open" -gt 0 ]; then
             echo "An issue is already open: not opening another."

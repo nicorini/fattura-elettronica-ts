@@ -1,15 +1,19 @@
 import { createHash } from 'node:crypto';
 import { readFile, writeFile } from 'node:fs/promises';
 import { parseArgs } from 'node:util';
+import type { DescriptionSource } from './generate/descriptions.ts';
 
 /**
  * Specification watcher: downloads the pages and files of the official specifications listed in
- * `specs/sources.json` and reports what differs from the fingerprints saved there.
+ * `specs/sources.json` and reports what differs from the fingerprints saved there. With
+ * `--editions`, it reports instead the yearly sources of `specs/code-list-descriptions.json` left on
+ * an old edition: two separate checks, each with its own issue, so that one doesn't hide the other.
  *
  *   node scripts/spec-watch.ts                  # compare and print the differences
  *   node scripts/spec-watch.ts --update         # save the current fingerprints
  *   node scripts/spec-watch.ts --report <file>  # also write the issue body, if something changed
  *   node scripts/spec-watch.ts --out <file>     # also write the current fingerprints
+ *   node scripts/spec-watch.ts --editions [--report <file>]  # check the editions only
  */
 
 /**
@@ -24,6 +28,40 @@ export type Source =
 export type Change =
   | { kind: 'file'; name: string; url: string; before?: string; after: string }
   | { kind: 'page'; name: string; url: string; added: string[]; removed: string[] };
+
+/** A watched source whose edition is older than `year`, the current one. */
+export interface EditionChange {
+  name: string;
+  edition: string;
+  year: number;
+}
+
+/** February, as `Date.getUTCMonth()` counts: by then the new edition of the CU is out. */
+const NEW_EDITION_MONTH = 1;
+
+/**
+ * The yearly sources whose edition is of a past year, from 1 February on. A new edition of the
+ * CU comes out in mid January at an address nobody can guess, so the watcher can't fetch it: it
+ * can only tell, once the edition must be out, that the descriptions are still on the old one.
+ */
+export function checkEditions(
+  sources: Readonly<Record<string, Pick<DescriptionSource, 'name' | 'edition' | 'yearly'>>>,
+  today: Date,
+): EditionChange[] {
+  const yearly = Object.values(sources).filter((source) => source.yearly === true);
+  for (const source of yearly) {
+    if (!/^\d{4}$/.test(source.edition)) {
+      throw new Error(
+        `${source.name} comes out every year, but its edition ${source.edition} is not a year`,
+      );
+    }
+  }
+  const year = today.getUTCFullYear();
+  if (today.getUTCMonth() < NEW_EDITION_MONTH) return [];
+  return yearly
+    .filter((source) => Number(source.edition) < year)
+    .map((source) => ({ name: source.name, edition: source.edition, year }));
+}
 
 /** Downloads every source and compares it with the saved fingerprint. */
 export async function checkSources(
@@ -111,11 +149,34 @@ export function renderIssue(changes: Change[]): string {
   return `${sections.join('\n\n')}\n`;
 }
 
+/** The body of the issue that reports the editions to update, in Italian. */
+export function renderEditionIssue(changes: EditionChange[]): string {
+  const sections = [
+    "Il sorvegliante delle specifiche ha trovato descrizioni dei codici ferme a un'edizione passata della loro fonte.",
+  ];
+  for (const change of changes) {
+    sections.push(
+      [
+        `## ${change.name}`,
+        `Le descrizioni dei codici in \`specs/code-list-descriptions.json\` vengono dall'edizione ${change.edition}, ma dal 1° febbraio deve essere uscita l'edizione ${change.year}. Il suo indirizzo cambia ogni anno, quindi il sorvegliante non può scaricarla da solo.`,
+        [
+          `1. Cercare l'edizione ${change.year} sul sito dell'Agenzia delle Entrate.`,
+          "2. Confrontare i testi delle voci che citano questa fonte con quelli della nuova edizione, e i codici che toglie o aggiunge con quelli dell'XSD.",
+          "3. Aggiornare in `specs/code-list-descriptions.json` nome, URL, SHA-256, edizione, pagine e testi, poi `pnpm generate`. Un testo cambiato è una versione `minor` che nomina l'edizione nel changelog.",
+          "4. Aggiornare in `specs/sources.json` le pagine dell'anno della fonte.",
+        ].join('\n'),
+      ].join('\n\n'),
+    );
+  }
+  return `${sections.join('\n\n')}\n`;
+}
+
 function linkList(title: string, links: string[]): string {
   return [title, ...links.map((link) => `- ${link}`)].join('\n');
 }
 
 const SOURCES_PATH = new URL('../specs/sources.json', import.meta.url);
+const DESCRIPTIONS_PATH = new URL('../specs/code-list-descriptions.json', import.meta.url);
 
 async function fetchBytes(url: string): Promise<Uint8Array> {
   const response = await fetch(url, {
@@ -133,10 +194,27 @@ async function main(): Promise<void> {
   const { values } = parseArgs({
     options: {
       update: { type: 'boolean', default: false },
+      editions: { type: 'boolean', default: false },
       report: { type: 'string' },
       out: { type: 'string' },
     },
   });
+
+  if (values.editions) {
+    const descriptions = JSON.parse(await readFile(DESCRIPTIONS_PATH, 'utf8')) as {
+      sources: Record<string, DescriptionSource>;
+    };
+    const changes = checkEditions(descriptions.sources, new Date());
+    if (changes.length === 0) {
+      console.log('No edition to update.');
+      return;
+    }
+    const body = renderEditionIssue(changes);
+    if (values.report !== undefined) await writeFile(values.report, body);
+    console.log(body);
+    return;
+  }
+
   const saved = JSON.parse(await readFile(SOURCES_PATH, 'utf8')) as Source[];
   const { sources, changes } = await checkSources(saved, fetchBytes);
   const json = `${JSON.stringify(sources, null, 2)}\n`;
