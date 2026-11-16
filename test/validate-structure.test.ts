@@ -625,6 +625,7 @@ describe('the order of the problems', () => {
     firstBody(fattura).DatiBeniServizi.DatiRiepilogo = [
       { AliquotaIVA: '22.00', ImponibileImporto: '15100.00', Imposta: '3322.00' },
     ];
+    firstBody(fattura).DatiGenerali.DatiGeneraliDocumento.ImportoTotaleDocumento = '18422.00';
     loose(fattura).Inventato = 'X';
     loose(fattura.FatturaElettronicaHeader.DatiTrasmissione).ProgressivoInvio = 1;
     const paths = validate(fattura).problems.map((problem) => problem.path);

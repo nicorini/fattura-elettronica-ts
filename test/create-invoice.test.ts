@@ -16,11 +16,22 @@ type LineaInput = BodyInput['DatiBeniServizi']['DettaglioLinee'][number];
 const SERVIZI = 'FatturaElettronicaBody[0].DatiBeniServizi';
 const DOCUMENTO = 'FatturaElettronicaBody[0].DatiGenerali.DatiGeneraliDocumento';
 
+/** The warnings of validate on an amount that createInvoice computes. */
+const ARITHMETIC_WARNINGS = new Set([
+  'warn.tolerance',
+  'warn.importoContributoCassa',
+  'warn.importoRitenuta',
+  'warn.importoTotaleDocumento',
+  'warn.importoPagamento',
+]);
+
 /** createInvoice, checking the invariant of every test: its output is exact for validate. */
 function create(input: CreateInvoiceInput): FatturaElettronica {
   const fattura = createInvoice(input);
   const problems = validate(fattura, { today: '2025-01-20' }).problems;
-  expect(problems.filter((p) => p.severity === 'error' || p.code === 'warn.tolerance')).toEqual([]);
+  expect(problems.filter((p) => p.severity === 'error' || ARITHMETIC_WARNINGS.has(p.code))).toEqual(
+    [],
+  );
   return fattura;
 }
 
@@ -494,10 +505,18 @@ describe('ImportoTotaleDocumento', () => {
     expect(totale(create(input))).toBe('122.00');
   });
 
-  test('keeps a total written by the user', () => {
+  test('keeps a total written by the user, which validate flags', () => {
     const input = fpr12Input();
     inputBody(input).DatiGenerali.DatiGeneraliDocumento.ImportoTotaleDocumento = 150;
-    expect(totale(create(input))).toBe('150.00');
+    const fattura = createInvoice(input);
+    expect(totale(fattura)).toBe('150.00');
+    expect(validate(fattura).problems).toContainEqual(
+      expect.objectContaining({
+        code: 'warn.importoTotaleDocumento',
+        expected: '122.00',
+        actual: '150.00',
+      }),
+    );
   });
 
   // A ScontoMaggiorazione of the document applies "sull'importo totale del documento" and "non è
@@ -637,12 +656,20 @@ describe('DatiPagamento', () => {
     expect(importiPagamento(create(input))).toEqual(['784.50']);
   });
 
-  test('keeps an ImportoPagamento written by the user', () => {
+  test('keeps an ImportoPagamento written by the user, which validate flags', () => {
     const input = withPagamenti(fpr12Input(), {
       CondizioniPagamento: 'TP02',
       DettaglioPagamento: [{ ModalitaPagamento: 'MP05', ImportoPagamento: 100 }],
     });
-    expect(importiPagamento(create(input))).toEqual(['100.00']);
+    const fattura = createInvoice(input);
+    expect(importiPagamento(fattura)).toEqual(['100.00']);
+    expect(validate(fattura).problems).toContainEqual(
+      expect.objectContaining({
+        code: 'warn.importoPagamento',
+        expected: '122.00',
+        actual: '100.00',
+      }),
+    );
   });
 
   test('adds no DatiPagamento', () => {

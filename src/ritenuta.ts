@@ -27,6 +27,12 @@ export function datiRitenuta(body: Body): Located<DatiRitenuta>[] {
   return blocks(body.datiDocumento?.DatiRitenuta, `${body.documento}.DatiRitenuta`);
 }
 
+/** Whether the formula applies: one block only, of type RT01 or RT02. */
+export function computable(ritenute: readonly Located<DatiRitenuta>[]): boolean {
+  const tipo = ritenute[0]?.block.TipoRitenuta;
+  return ritenute.length === 1 && (tipo === 'RT01' || tipo === 'RT02');
+}
+
 function add(sum: Big | undefined, value: unknown): Big | undefined {
   const amount = toBig(value);
   return amount === undefined ? undefined : sum?.plus(amount);
