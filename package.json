@@ -1,6 +1,6 @@
 {
   "name": "fattura-elettronica-ts",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Fattura elettronica italiana (FatturaPA) in TypeScript: modello tipizzato 1:1 con l'XSD, lettura e scrittura dell'XML, validazione XSD e controlli del SdI con i codici ufficiali.",
   "keywords": [
     "fattura elettronica",
