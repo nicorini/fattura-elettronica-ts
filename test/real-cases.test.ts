@@ -20,6 +20,11 @@ const RIEPILOGO = 'FatturaElettronicaBody[0].DatiBeniServizi.DatiRiepilogo[0]';
 const CEDENTE = 'FatturaElettronicaHeader.CedentePrestatore.DatiAnagrafici';
 const CESSIONARIO = 'FatturaElettronicaHeader.CessionarioCommittente.DatiAnagrafici';
 const P_IVA_CEDENTE = '01234567897';
+const P_IVA_CLIENTE = '02876990587';
+/** A foreign VAT number: the SdI checks only the Italian ones. */
+const ID_ESTERO = '12345678901';
+/** The codice fiscale of the owner of a sole trader, and of the customer of `fpr12`. */
+const CF_TITOLARE = 'RSSMRA80A01H501U';
 
 /** The invoice is valid, and build then parse gives it back unchanged. */
 function expectReadAndWritten(fattura: FatturaElettronica): string {
@@ -54,7 +59,7 @@ function setLine(
 }
 
 /** An invoice of type `tipo` from a supplier identified in `paese`, to a company with a P.IVA. */
-function selfInvoice(
+function invoiceFrom(
   tipo: DatiGeneraliDocumento['TipoDocumento'],
   paese: string,
 ): FatturaElettronica {
@@ -62,13 +67,28 @@ function selfInvoice(
   const header = fattura.FatturaElettronicaHeader;
   header.CedentePrestatore.DatiAnagrafici.IdFiscaleIVA = {
     IdPaese: paese,
-    IdCodice: paese === 'IT' ? P_IVA_CEDENTE : '12345678901',
+    IdCodice: paese === 'IT' ? P_IVA_CEDENTE : ID_ESTERO,
   };
   header.CessionarioCommittente.DatiAnagrafici = {
-    IdFiscaleIVA: { IdPaese: 'IT', IdCodice: '02876990587' },
+    IdFiscaleIVA: { IdPaese: 'IT', IdCodice: P_IVA_CLIENTE },
     Anagrafica: { Denominazione: 'GAMMA SRL' },
   };
   firstBody(fattura).DatiGenerali.DatiGeneraliDocumento.TipoDocumento = tipo;
+  return fattura;
+}
+
+/**
+ * An invoice of type `tipo` from a sole trader to himself: the same P.IVA on both sides, and the
+ * codice fiscale of the owner for the supplier only.
+ */
+function toHimself(tipo: DatiGeneraliDocumento['TipoDocumento']): FatturaElettronica {
+  const fattura = invoiceFrom(tipo, 'IT');
+  const header = fattura.FatturaElettronicaHeader;
+  header.CedentePrestatore.DatiAnagrafici.CodiceFiscale = CF_TITOLARE;
+  header.CessionarioCommittente.DatiAnagrafici.IdFiscaleIVA = {
+    IdPaese: 'IT',
+    IdCodice: P_IVA_CEDENTE,
+  };
   return fattura;
 }
 
@@ -359,31 +379,40 @@ describe('XML other libraries could not read or judged wrongly', () => {
   const NS = 'http://ivaservizi.agenziaentrate.gov.it/docs/xsd/fatture/v1.2';
 
   // https://github.com/FatturaElettronica/FatturaElettronica.NET/issues/421
-  test('reads and accepts windows-1252 declared in the prolog', () => {
+  test('reads windows-1252 declared in the prolog, € included', () => {
     const fattura = fpr12();
-    firstLine(fattura).Descrizione = 'Caffè perché così';
-    const xml = build(fattura).replace('encoding="UTF-8"', 'encoding="windows-1252"');
-    // One byte per character: the accented letters have the same code in windows-1252.
-    const bytes = Uint8Array.from(xml, (char) => char.charCodeAt(0));
+    // The XSD allows only Latin-1 in Descrizione, so the € is refused there; reading keeps it.
+    firstLine(fattura).Descrizione = 'Caffè perché € 2';
+    const xml = build(fattura, { validate: false }).replace(
+      'encoding="UTF-8"',
+      'encoding="windows-1252"',
+    );
+    // One byte per character: Latin-1, plus € at 0x80 as in windows-1252.
+    const bytes = Uint8Array.from(xml, (char) => (char === '€' ? 0x80 : char.charCodeAt(0)));
     expect(parse(bytes)).toEqual(fattura);
-    expect(validate(bytes)).toEqual({ valid: true, problems: [] });
   });
 
-  // https://github.com/FatturaElettronica/FatturaElettronica.NET/issues/289: ns3 is the namespace
-  // of the FatturaPA, ns2 that of the signature.
-  test('reads a root with the ns3: prefix next to ns2: for the signature', () => {
-    const root = base.match(/<(\w+):FatturaElettronica [^>]*>/);
-    if (root?.[1] === undefined) throw new Error('No prefixed root');
-    const prefix = root[1];
-    const xml = base
-      .replace(
-        root[0],
-        `<ns3:FatturaElettronica xmlns:ns3="${NS}" xmlns:ns2="http://www.w3.org/2000/09/xmldsig#" versione="FPR12">`,
-      )
-      .replace(`</${prefix}:FatturaElettronica>`, '</ns3:FatturaElettronica>');
-    expect(parse(xml)).toEqual(fpr12());
-    expect(validate(xml)).toEqual({ valid: true, problems: [] });
-  });
+  // .NET#289 and #303: ns2 and ns3 are the prefixes of other software, one for the FatturaPA and
+  // the other for the signature.
+  // https://github.com/FatturaElettronica/FatturaElettronica.NET/issues?q=289+303
+  test.each([
+    ['ns3', 'ns2'],
+    ['ns2', 'ns3'],
+  ])(
+    'reads and accepts a root with the %s: prefix, %s: being the signature',
+    (fatturaPA, firma) => {
+      const root = base.match(/<(\w+):FatturaElettronica [^>]*>/);
+      if (root?.[1] === undefined) throw new Error('No prefixed root');
+      const xml = base
+        .replace(
+          root[0],
+          `<${fatturaPA}:FatturaElettronica xmlns:${fatturaPA}="${NS}" xmlns:${firma}="http://www.w3.org/2000/09/xmldsig#" versione="FPR12">`,
+        )
+        .replace(`</${root[1]}:FatturaElettronica>`, `</${fatturaPA}:FatturaElettronica>`);
+      expect(parse(xml)).toEqual(fpr12());
+      expect(validate(xml)).toEqual({ valid: true, problems: [] });
+    },
+  );
 
   // https://github.com/FatturaElettronica/FatturaElettronica.NET/issues/412
   test('Quantita out of its place in DettaglioLinee is xsd.order, which libxml2 refuses too', () => {
@@ -504,7 +533,7 @@ describe('codes other libraries refused', () => {
     ['TD28', 'SM'],
     ['TD29', 'IT'],
   ] as const)('%s from a supplier of %s is read and accepted', (tipo, paese) => {
-    expectReadAndWritten(selfInvoice(tipo, paese));
+    expectReadAndWritten(invoiceFrom(tipo, paese));
   });
 
   test('RF20, new in XSD 1.2.3, is accepted', () => {
@@ -523,6 +552,10 @@ describe('codes other libraries refused', () => {
   });
 });
 
+// Sources: Elenco controlli SdI 2.0,
+// https://www.fatturapa.gov.it/export/documenti/fatturapa/v1.4/Elenco-Controlli-versione-2.0.pdf;
+// Allegato A, Specifiche tecniche 1.9.1,
+// https://www.agenziaentrate.gov.it/portale/documents/d/guest/allegato-a-specifiche-tecniche-vers-1-9-1.
 describe('checks of the SdI other libraries got wrong', () => {
   // https://github.com/fatturaelettronicaphp/FatturaElettronica/issues/106: "IF ( non esiste
   // IdFiscaleIVA && non esiste CodiceFiscale ) ERRORE (00417)" (Elenco controlli SdI 2.0, p. 20).
@@ -537,28 +570,29 @@ describe('checks of the SdI other libraries got wrong', () => {
   });
 
   // .NET#409, #388: a sole trader gives goods to himself as a private person (TD27), and the
-  // customer has only the codice fiscale: the SdI finds the P.IVA in the Anagrafe tributaria.
+  // customer has only the codice fiscale. "Nei casi in cui in fattura sia presente il solo
+  // IDCessionarioCF per il cessionario, si risale all' IDCessionarioPIVA attraverso interrogazione
+  // di Anagrafe Tributaria" (Elenco controlli SdI 2.0, p. 40): offline there is nothing to compare.
   // https://github.com/FatturaElettronica/FatturaElettronica.NET/issues?q=409+388
   test('TD27 from a sole trader to himself by codice fiscale is accepted', () => {
     const fattura = fpr12();
     const cedente = fattura.FatturaElettronicaHeader.CedentePrestatore.DatiAnagrafici;
-    cedente.CodiceFiscale = 'RSSMRA80A01H501U';
+    cedente.CodiceFiscale = CF_TITOLARE;
     cedente.Anagrafica = { Denominazione: 'ROSSI MARIO DITTA INDIVIDUALE' };
     firstBody(fattura).DatiGenerali.DatiGeneraliDocumento.TipoDocumento = 'TD27';
     expectReadAndWritten(fattura);
   });
 
-  // https://github.com/FatturaElettronica/FatturaElettronica.NET/issues/396
-  test('TD27 with the same P.IVA and a codice fiscale for the supplier only is accepted', () => {
-    const fattura = selfInvoice('TD27', 'IT');
-    const header = fattura.FatturaElettronicaHeader;
-    header.CedentePrestatore.DatiAnagrafici.CodiceFiscale = 'RSSMRA80A01H501U';
-    header.CessionarioCommittente.DatiAnagrafici.IdFiscaleIVA = {
-      IdPaese: 'IT',
-      IdCodice: P_IVA_CEDENTE,
-    };
-    expectReadAndWritten(fattura);
-  });
+  // https://github.com/FatturaElettronica/FatturaElettronica.NET/issues/396: "IF ( TipoDocumento
+  // == TD21 ) IF ( IDCedente != IDCessionarioIVA ) ERRORE (00472)" (Elenco controlli SdI 2.0,
+  // p. 41) compares the P.IVA; "i tipi documento TD21 e TD27 non ammettono l'indicazione in fattura
+  // di un cedente diverso dal cessionario" (Allegato A 1.9.1, p. 119).
+  test.each(['TD21', 'TD27'] as const)(
+    '%s with the same P.IVA and a codice fiscale for the supplier only is accepted',
+    (tipo) => {
+      expectReadAndWritten(toHimself(tipo));
+    },
+  );
 
   // https://github.com/FatturaElettronica/FatturaElettronica.NET/issues/386: "IF ( IDPaeseCedente
   // != IT && IDPaeseCessionario != IT ) ERRORE (00476)" reads both from IdFiscaleIVA/IdPaese
@@ -566,7 +600,7 @@ describe('checks of the SdI other libraries got wrong', () => {
   test('a supplier of the Vatican and a customer with only a codice fiscale is accepted', () => {
     const fattura = fpr12();
     const cedente = fattura.FatturaElettronicaHeader.CedentePrestatore;
-    cedente.DatiAnagrafici.IdFiscaleIVA = { IdPaese: 'VA', IdCodice: '12345678901' };
+    cedente.DatiAnagrafici.IdFiscaleIVA = { IdPaese: 'VA', IdCodice: ID_ESTERO };
     cedente.Sede = {
       Indirizzo: 'VIA DEL PELLEGRINO',
       CAP: '00120',
@@ -580,14 +614,22 @@ describe('checks of the SdI other libraries got wrong', () => {
   // IdFiscaleIVA, even when the supplier has a codice fiscale too. "IF ( TipoDocumento == TD16
   // [...] ) IF ( IDCedente == IDCessionarioIVA ) ERRORE (00471)" (Elenco controlli SdI 2.0, p. 40).
   test('TD16 with the same P.IVA is 00471, even with a codice fiscale for the supplier', () => {
-    const fattura = selfInvoice('TD16', 'IT');
-    const header = fattura.FatturaElettronicaHeader;
-    header.CedentePrestatore.DatiAnagrafici.CodiceFiscale = 'RSSMRA80A01H501U';
-    header.CessionarioCommittente.DatiAnagrafici.IdFiscaleIVA = {
-      IdPaese: 'IT',
-      IdCodice: P_IVA_CEDENTE,
-    };
-    expect(errors(fattura)).toEqual([{ code: 'sdi.00471', path: `${DOCUMENTO}.TipoDocumento` }]);
+    expect(errors(toHimself('TD16'))).toEqual([
+      { code: 'sdi.00471', path: `${DOCUMENTO}.TipoDocumento` },
+    ]);
+  });
+
+  // https://github.com/FatturaElettronica/FatturaElettronica.NET/issues/378: the Allegato A 1.9.1,
+  // p. 119, adds "TD01, TD02, TD03, TD06 [...] TD24, TD25, TD28" to the types of 00471, which the
+  // Elenco controlli SdI 2.0 (p. 40) doesn't list: a warning.
+  test('TD01 with the same P.IVA is a warning of 00471', () => {
+    expect(validate(toHimself('TD01')).problems).toEqual([
+      expect.objectContaining({
+        code: 'sdi.00471.warn',
+        path: `${DOCUMENTO}.TipoDocumento`,
+        severity: 'warning',
+      }),
+    ]);
   });
 
   // https://github.com/FatturaElettronica/FatturaElettronica.NET/issues/309: "1.1.4
@@ -602,10 +644,11 @@ describe('checks of the SdI other libraries got wrong', () => {
   });
 
   // https://github.com/FatturaElettronica/FatturaElettronica.NET/issues/394: the SdI refuses a
-  // PrezzoTotale off by more than "±1 centesimo di euro" (Allegato A 1.9.1, p. 56).
+  // PrezzoTotale whose difference "è superiore a ±1 centesimo di euro" (Allegato A 1.9.1, p. 51).
   test('a cascade of percentage discounts a cent away from the exact result is accepted', () => {
     const fattura = fpr12();
-    // 33.33 × 0.90 × 0.95 × 3.00 = 85.49145: 85.50 is 0.00855 away, 85.48 is 0.01145 away.
+    // 33.33 × 0.90 × 0.95 × 3.00 = 85.49145: 85.50 is 0.00855 away; 85.47 is 0.02145 away, over
+    // the tolerance even if the SdI rounded the difference to the cent.
     setLine(
       fattura,
       { Quantita: '3.00', PrezzoUnitario: '33.33', PrezzoTotale: '85.50' },
@@ -616,26 +659,42 @@ describe('checks of the SdI other libraries got wrong', () => {
       { Tipo: 'SC', Percentuale: '5.00' },
     ];
     expect(validate(fattura).valid).toBe(true);
-    firstLine(fattura).PrezzoTotale = '85.48';
+    firstLine(fattura).PrezzoTotale = '85.47';
     expect(errors(fattura)).toContainEqual({ code: 'sdi.00423', path: `${LINEA}.PrezzoTotale` });
   });
 
-  // https://github.com/Truelite/python-a38/issues/27: "IF ( AliquotaIVA == 0.00 ) IF ( non esiste
-  // Natura ) ERRORE (00400)" (Elenco controlli SdI 2.0, p. 10).
-  test('a line at 0% without Natura is 00400', () => {
+  // https://github.com/Truelite/python-a38/issues/27: a line at 0% with its Natura, and a summary at
+  // 0% without one. 00429 is 00400 for the DatiRiepilogo (Elenco controlli SdI 2.0, p. 35); 00444:
+  // "tutti i valori di natura dell'operazione presenti nelle linee di dettaglio [...] devono essere
+  // presenti anche nei dati di riepilogo" (Allegato A 1.9.1, p. 118).
+  test('a summary at 0% without the Natura of its line is 00429, and the line 00444', () => {
     const fattura = fpr12();
-    firstBody(fattura).DatiBeniServizi.DettaglioLinee.push({
+    const body = firstBody(fattura);
+    body.DatiBeniServizi.DettaglioLinee.push({
       NumeroLinea: '2',
-      Descrizione: 'Other item',
+      Descrizione: 'Altro articolo',
       Quantita: '1.00',
       UnitaMisura: 'kg',
       PrezzoUnitario: '15.50',
       PrezzoTotale: '15.50',
       AliquotaIVA: '0.00',
+      Natura: 'N3.1',
     });
-    expect(errors(fattura)).toContainEqual({
-      code: 'sdi.00400',
-      path: 'FatturaElettronicaBody[0].DatiBeniServizi.DettaglioLinee[1].Natura',
+    body.DatiBeniServizi.DatiRiepilogo.push({
+      AliquotaIVA: '0.00',
+      ImponibileImporto: '15.50',
+      Imposta: '0.00',
     });
+    body.DatiGenerali.DatiGeneraliDocumento.ImportoTotaleDocumento = '137.50';
+    expect(errors(fattura)).toEqual([
+      {
+        code: 'sdi.00444',
+        path: 'FatturaElettronicaBody[0].DatiBeniServizi.DettaglioLinee[1].Natura',
+      },
+      {
+        code: 'sdi.00429',
+        path: 'FatturaElettronicaBody[0].DatiBeniServizi.DatiRiepilogo[1].Natura',
+      },
+    ]);
   });
 });

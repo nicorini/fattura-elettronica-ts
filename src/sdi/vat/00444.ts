@@ -13,7 +13,7 @@ export const rule00444: SdiRule = (fattura) => {
     const nature = new Set<unknown>(riepiloghi(body).map(({ block }) => block.Natura));
     for (const { block, path } of summarized(body)) {
       const natura: unknown = block.Natura;
-      if (typeof natura !== 'string' || refusedNatura(natura) || nature.has(natura)) continue;
+      if (natura === undefined || refusedNatura(natura) || nature.has(natura)) continue;
       problems.push(
         sdiError(
           '00444',
@@ -39,7 +39,7 @@ export const rule00444Warning: SdiRule = (fattura) => {
     const nature = new Set<unknown>(found.map(({ block }) => block.Natura));
     for (const { block: riepilogo, path } of riepiloghi(body)) {
       const natura: unknown = riepilogo.Natura;
-      if (typeof natura !== 'string' || refusedNatura(natura) || nature.has(natura)) continue;
+      if (natura === undefined || refusedNatura(natura) || nature.has(natura)) continue;
       problems.push(
         sdiWarning(
           '00444',
