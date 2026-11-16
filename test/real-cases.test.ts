@@ -647,23 +647,25 @@ describe('checks of the SdI other libraries got wrong', () => {
     ]);
   });
 
-  // https://github.com/FatturaElettronica/FatturaElettronica.NET/issues/394: the SdI refuses a
-  // PrezzoTotale whose difference "è superiore a ±1 centesimo di euro" (Allegato A 1.9.1, p. 51).
-  test('a cascade of percentage discounts a cent away from the exact result is accepted', () => {
+  // https://github.com/FatturaElettronica/FatturaElettronica.NET/issues/394: the SdI accepted the
+  // attached invoice, whose line 15 is 0.0930 × 200 with a 48% discount, 9.672, written as 9.66.
+  // The Allegato A 1.9.1 refuses a difference "superiore a ±1 centesimo di euro" (p. 51): 0.012 is
+  // a warning, not an error.
+  test('a discounted line off by 0.012, accepted by the SdI, is valid with a warning', () => {
     const fattura = fpr12();
-    // 33.33 × 0.90 × 0.95 × 3.00 = 85.49145: 85.50 is 0.00855 away; 85.47 is 0.02145 away, over
-    // the tolerance even if the SdI rounded the difference to the cent.
     setLine(
       fattura,
-      { Quantita: '3.00', PrezzoUnitario: '33.33', PrezzoTotale: '85.50' },
-      { ImponibileImporto: '85.50', Imposta: '18.81', totale: '104.31' },
+      { Quantita: '200.00', PrezzoUnitario: '0.0930', PrezzoTotale: '9.66' },
+      { ImponibileImporto: '9.66', Imposta: '2.13', totale: '11.79' },
     );
-    firstLine(fattura).ScontoMaggiorazione = [
-      { Tipo: 'SC', Percentuale: '10.00' },
-      { Tipo: 'SC', Percentuale: '5.00' },
-    ];
-    expect(validate(fattura).valid).toBe(true);
-    firstLine(fattura).PrezzoTotale = '85.47';
+    firstLine(fattura).ScontoMaggiorazione = [{ Tipo: 'SC', Percentuale: '48.00' }];
+    const result = validate(fattura);
+    expect(result.valid).toBe(true);
+    expect(result.problems).toContainEqual(
+      expect.objectContaining({ code: 'sdi.00423.warn', path: `${LINEA}.PrezzoTotale` }),
+    );
+    // 9.65 is off by 0.022, over the tolerance even with the difference rounded to the cent.
+    firstLine(fattura).PrezzoTotale = '9.65';
     expect(errors(fattura)).toContainEqual({ code: 'sdi.00423', path: `${LINEA}.PrezzoTotale` });
   });
 

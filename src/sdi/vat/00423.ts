@@ -3,15 +3,17 @@ import type { DettaglioLinee, ScontoMaggiorazione } from '../../generated/model.
 import type { Problem } from '../../problem.js';
 import { block as asBlock, bodies, lines, list, toBig } from '../fields.js';
 import { type SdiRule, sdiWarning } from '../rule.js';
-import { ELENCO_CONTROLLI, source } from '../sources.js';
-import { compareAmount } from './tolerance.js';
+import { ALLEGATO_A, ELENCO_CONTROLLI, source } from '../sources.js';
+import { compareAmount, type RoundDifference, withinTolerance } from './tolerance.js';
 import { amount, round2 } from './values.js';
 
 const TOLERANCE = '0.01';
+const ROUND_DIFFERENCE: RoundDifference = { code: '00423', source: source(ALLEGATO_A, 51) };
 
 /**
  * 00423: PrezzoTotale = PrezzoUnitario, adjusted by each ScontoMaggiorazione in order, × Quantita
- * (1 if missing). No rounding on the way; tolerance 0.01 €.
+ * (1 if missing). No rounding on the way; tolerance 0.01 €, on the difference rounded to the cent
+ * (see `compareAmount`).
  *
  * Two points the sources leave open give more than one reading of the same line: how the SdI
  * reads a negative Importo (Tipo gives the direction; with its sign or as an absolute value?) and
@@ -49,7 +51,9 @@ export const rule00423: SdiRule = (fattura) => {
       const [first] = all;
       if (first === undefined) continue;
       const at = `${path}.PrezzoTotale`;
-      const fitting = all.filter(({ value }) => actual.minus(value).abs().lte(TOLERANCE));
+      const fitting = all.filter(({ value }) =>
+        withinTolerance(actual.minus(value).abs(), TOLERANCE, ROUND_DIFFERENCE),
+      );
       if (fitting.length === 0 || fitting.length === all.length) {
         problems.push(
           ...compareAmount({
@@ -60,6 +64,7 @@ export const rule00423: SdiRule = (fattura) => {
             tolerance: TOLERANCE,
             expected: first.value,
             actual,
+            roundDifference: ROUND_DIFFERENCE,
           }),
         );
         continue;

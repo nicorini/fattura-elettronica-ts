@@ -44,7 +44,8 @@ describe('00423 PrezzoTotale', () => {
   // Allegato A 1.9.1, p. 51: scarto "Se non viene verificata la suddetta corrispondenza e la
   // differenza è superiore a ±1 centesimo di euro (tolleranza ammessa)"
   // (https://www.agenziaentrate.gov.it/portale/documents/d/guest/allegato-a-specifiche-tecniche-vers-1-9-1).
-  // A difference of exactly 0.01 passes, as on the real SdI (FatturaElettronica.NET#394).
+  // The Elenco controlli says instead "inferiore a ±0,01" (p. 27); the real SdI accepted more than
+  // both (below).
   test('a difference of exactly 0.01 passes, with a warn.tolerance', () => {
     const fattura = fpr12();
     firstLine(fattura).PrezzoUnitario = '50.005';
@@ -61,11 +62,53 @@ describe('00423 PrezzoTotale', () => {
     ]);
   });
 
-  test('a difference just above 0.01 is an error', () => {
+  // The real SdI accepted line 15 of the invoice attached to FatturaElettronica.NET#394:
+  // 0.0930 × 200 with a 48% discount is 9.672, written as 9.66, off by 0.012
+  // (https://github.com/FatturaElettronica/FatturaElettronica.NET/issues/394, file attached to the
+  // issue). Its users read it as a difference rounded to the cent before the
+  // comparison: 0.012 is 0.01 and passes, 0.015 is 0.02 and is refused. No document of the Agenzia
+  // says so: a difference above 0.01 that rounds to 0.01 is a warning, from 0.015 an error.
+  test('a difference above 0.01 that rounds to 0.01 is a sdi.00423.warn', () => {
     const fattura = fpr12();
     firstLine(fattura).PrezzoUnitario = '50.00500001';
     expect(vatProblems(fattura)).toEqual([
-      expect.objectContaining({ code: 'sdi.00423', expected: '100.01000002', actual: '100.00' }),
+      {
+        code: 'sdi.00423.warn',
+        path: linePath,
+        message: expect.stringContaining('100.01'),
+        severity: 'warning',
+        source: 'Allegato A, Specifiche tecniche 1.9.1, p. 51',
+        expected: '100.01',
+        actual: '100.00',
+      },
+    ]);
+  });
+
+  test('the line of FatturaElettronica.NET#394, off by 0.012, is a sdi.00423.warn', () => {
+    const fattura = fpr12();
+    const linea = firstLine(fattura);
+    linea.Quantita = '200.00';
+    linea.PrezzoUnitario = '0.0930';
+    linea.ScontoMaggiorazione = [{ Tipo: 'SC', Percentuale: '48.00' }];
+    linea.PrezzoTotale = '9.66';
+    expect(vatProblems(fattura)).toContainEqual(
+      expect.objectContaining({ code: 'sdi.00423.warn', expected: '9.67', actual: '9.66' }),
+    );
+  });
+
+  test('a difference just below 0.015 is a sdi.00423.warn', () => {
+    const fattura = fpr12();
+    firstLine(fattura).PrezzoUnitario = '50.00749999';
+    expect(vatProblems(fattura)).toEqual([
+      expect.objectContaining({ code: 'sdi.00423.warn', expected: '100.01', actual: '100.00' }),
+    ]);
+  });
+
+  test('a difference of 0.015, which rounds to 0.02, is an error', () => {
+    const fattura = fpr12();
+    firstLine(fattura).PrezzoUnitario = '50.0075';
+    expect(vatProblems(fattura)).toEqual([
+      expect.objectContaining({ code: 'sdi.00423', expected: '100.015', actual: '100.00' }),
     ]);
   });
 
@@ -100,10 +143,14 @@ describe('00423 PrezzoTotale', () => {
       ]);
     });
 
-    test('the error is judged on the exact product', () => {
-      // 3.69 is 0.01370367 off the exact product, though only 0.01 off the rounded 3.70.
+    test('the difference is judged on the exact product', () => {
+      // 3.69 is 0.01370367 off the exact product, though only 0.01 off the rounded 3.70: it
+      // rounds to 0.01, a warning. 3.68 is 0.02370367 off, an error.
       expect(lineProblems(withPrice('3.69'))).toEqual([
-        expect.objectContaining({ code: 'sdi.00423', expected: '3.70370367', actual: '3.69' }),
+        expect.objectContaining({ code: 'sdi.00423.warn', expected: '3.70', actual: '3.69' }),
+      ]);
+      expect(lineProblems(withPrice('3.68'))).toEqual([
+        expect.objectContaining({ code: 'sdi.00423', expected: '3.70370367', actual: '3.68' }),
       ]);
     });
   });
@@ -144,7 +191,11 @@ describe('00423 PrezzoTotale', () => {
     expect(amountProblems(caso(sconti, '42092.05'))).toEqual([
       expect.objectContaining({ code: 'warn.tolerance', expected: '42092.06' }),
     ]);
+    // 42092.07 is 0.01125 off, which rounds to 0.01: a warning; 42092.08 is 0.02125 off.
     expect(amountProblems(caso(sconti, '42092.07'))).toEqual([
+      expect.objectContaining({ code: 'sdi.00423.warn', expected: '42092.06' }),
+    ]);
+    expect(amountProblems(caso(sconti, '42092.08'))).toEqual([
       expect.objectContaining({ code: 'sdi.00423', expected: '42092.05875' }),
     ]);
   });
@@ -360,9 +411,7 @@ describe('00423 PrezzoTotale', () => {
     });
   });
 
-  // FatturaElettronica.NET#394: a cascade of percentage discounts whose exact result is a cent
-  // away from the PrezzoTotale rounded by the seller, accepted by the SdI.
-  test('a cascade of discounts a cent away from the exact result passes', () => {
+  test('a cascade of discounts a cent away from the exact result passes or warns', () => {
     const fattura = fpr12();
     const linea = firstLine(fattura);
     linea.Quantita = '3.00';
@@ -371,15 +420,19 @@ describe('00423 PrezzoTotale', () => {
       { Tipo: 'SC', Percentuale: '10.00' },
       { Tipo: 'SC', Percentuale: '5.00' },
     ];
-    // 33.33 × 0.90 × 0.95 × 3 = 85.49145: written as 85.48, off by 0.01145, is an error;
-    // written as 85.50 it is off by 0.00855 and passes.
+    // 33.33 × 0.90 × 0.95 × 3 = 85.49145: written as 85.50 it is off by 0.00855 and passes;
+    // as 85.48, off by 0.01145, it warns; as 85.47, off by 0.02145, it is an error.
     linea.PrezzoTotale = '85.50';
     expect(amountProblems(fattura)).toEqual([
       expect.objectContaining({ code: 'warn.tolerance', expected: '85.49', actual: '85.50' }),
     ]);
     linea.PrezzoTotale = '85.48';
     expect(amountProblems(fattura)).toEqual([
-      expect.objectContaining({ code: 'sdi.00423', expected: '85.49145', actual: '85.48' }),
+      expect.objectContaining({ code: 'sdi.00423.warn', expected: '85.49', actual: '85.48' }),
+    ]);
+    linea.PrezzoTotale = '85.47';
+    expect(amountProblems(fattura)).toEqual([
+      expect.objectContaining({ code: 'sdi.00423', expected: '85.49145', actual: '85.47' }),
     ]);
   });
 });

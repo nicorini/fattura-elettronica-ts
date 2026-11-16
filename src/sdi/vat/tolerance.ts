@@ -1,10 +1,19 @@
 // The three checks on amounts (00421, 00422, 00423) share how a difference is judged.
 
 import type Big from 'big.js';
-import type { SdiErrorCode } from '../../codes.js';
+import type { SdiErrorCode, SdiWarningCode } from '../../codes.js';
 import type { Problem } from '../../problem.js';
-import { libraryWarning, sdiError } from '../rule.js';
+import { libraryWarning, sdiError, sdiWarning } from '../rule.js';
 import { amount, round2 } from './values.js';
+
+/**
+ * A check whose difference is rounded to the cent before the comparison: a difference above the
+ * tolerance that rounds within it is the `code` warning, citing `source`.
+ */
+export interface RoundDifference {
+  readonly code: SdiWarningCode;
+  readonly source: string;
+}
 
 /**
  * Compares the amount of the invoice with the one the rule computes. A difference above the
@@ -15,8 +24,11 @@ import { amount, round2 } from './values.js';
  *
  * A difference equal to the tolerance passes. The Allegato A 1.9.1 rejects only a difference
  * "superiore a ±1 centesimo di euro" (pp. 51, 56) while the Elenco controlli 2.0 accepts only one
- * "inferiore a ±0,01" (pp. 24-27): the library follows the less strict, which the real SdI
- * confirmed by accepting lines off by 0.01 (FatturaElettronica.NET#394).
+ * "inferiore a ±0,01" (pp. 24-27): the library follows the less strict.
+ *
+ * With `roundDifference` the error starts from 0.015, and a difference above 0.01 below that is a
+ * warning: the real SdI accepted a PrezzoTotale off by 0.012 (FatturaElettronica.NET#394), which
+ * neither document allows.
  */
 export function compareAmount(check: {
   readonly sdiCode: SdiErrorCode;
@@ -26,9 +38,10 @@ export function compareAmount(check: {
   readonly tolerance: string;
   readonly expected: Big;
   readonly actual: Big;
+  readonly roundDifference?: RoundDifference;
 }): Problem[] {
   const difference = check.actual.minus(check.expected).abs();
-  if (difference.gt(check.tolerance)) {
+  if (!withinTolerance(difference, check.tolerance, check.roundDifference)) {
     const amounts = { expected: amount(check.expected), actual: amount(check.actual) };
     return [
       sdiError(
@@ -40,9 +53,20 @@ export function compareAmount(check: {
       ),
     ];
   }
-  const rounded = round2(check.expected);
-  if (difference.eq(0) || check.actual.eq(rounded)) return [];
-  const amounts = { expected: amount(rounded), actual: amount(check.actual) };
+  const roundedExpected = round2(check.expected);
+  const amounts = { expected: amount(roundedExpected), actual: amount(check.actual) };
+  if (check.roundDifference !== undefined && difference.gt(check.tolerance)) {
+    return [
+      sdiWarning(
+        check.roundDifference.code,
+        check.path,
+        `${check.field} è ${amounts.actual}, ma i dati della fattura danno ${amount(check.expected)}: la differenza di ${amount(difference)} supera di poco la tolleranza di ${check.tolerance} € delle specifiche. Il SdI ha accettato differenze così in casi reali, ma per sicurezza scrivi ${amounts.expected}.`,
+        check.roundDifference.source,
+        amounts,
+      ),
+    ];
+  }
+  if (difference.eq(0) || check.actual.eq(roundedExpected)) return [];
   return [
     libraryWarning(
       'warn.tolerance',
@@ -51,4 +75,13 @@ export function compareAmount(check: {
       { source: check.source, ...amounts },
     ),
   ];
+}
+
+/** Whether the SdI accepts `difference`; with `roundDifference`, once rounded to the cent. */
+export function withinTolerance(
+  difference: Big,
+  tolerance: string,
+  roundDifference?: RoundDifference,
+): boolean {
+  return (roundDifference === undefined ? difference : round2(difference)).lte(tolerance);
 }
