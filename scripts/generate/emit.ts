@@ -26,6 +26,14 @@ export function jsdoc(paragraphs: readonly string[], indent = 0): string {
   return `${pad}/**\n${lines.map((line) => `${pad} *${line === '' ? '' : ` ${line}`}`).join('\n')}\n${pad} */\n`;
 }
 
+/** A `//` comment, indented by `indent` spaces and wrapped to the line width. */
+export function lineComment(text: string, indent = 0): string {
+  const pad = ' '.repeat(indent);
+  return wrap(text, WIDTH - indent - 3, '')
+    .map((line) => `${pad}// ${line}\n`)
+    .join('');
+}
+
 function wrap(text: string, width: number, hanging: string): string[] {
   const lines: string[] = [];
   let line = '';

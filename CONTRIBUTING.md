@@ -10,10 +10,11 @@ pnpm lint       # formattazione e lint (Biome); `pnpm fix` corregge
 pnpm typecheck
 pnpm test
 pnpm build
-pnpm generate   # rigenera src/generated dall'XSD in specs/
+pnpm generate   # rigenera src/generated dai file in specs/
 ```
 
-Il codice in `src/generated` lo scrive `scripts/generate` a partire dall'XSD ufficiale: non si
+Il codice in `src/generated` lo scrive `scripts/generate` a partire dall'XSD ufficiale e, per le
+descrizioni dei codici che l'XSD non ha, da `specs/code-list-descriptions.json`: non si
 modifica a mano. Si cambia il generatore e si rilancia `pnpm generate`; la CI controlla che il
 codice committato sia identico a quello rigenerato.
 
