@@ -1,8 +1,8 @@
 // The formula of ImportoTotaleDocumento, in one place: createInvoice fills it, and validate
 // compares it.
 import Big from 'big.js';
-import { type Body, list, riepiloghi, toBig } from './sdi/fields.js';
-import { round2 } from './sdi/vat/values.js';
+import { round2, sum } from './arithmetic.js';
+import { type Body, list, riepiloghi } from './sdi/fields.js';
 
 /**
  * Σ ImponibileImporto + Σ Imposta of the DatiRiepilogo, plus the Arrotondamento of the document.
@@ -12,16 +12,14 @@ import { round2 } from './sdi/vat/values.js';
 export function importoTotaleDocumento(body: Body): Big | undefined {
   const documento = body.datiDocumento;
   if (documento === undefined || hasScontoDocumento(body)) return undefined;
-  let total: Big | undefined =
-    documento.Arrotondamento === undefined ? new Big(0) : toBig(documento.Arrotondamento);
-  for (const { block: riepilogo } of riepiloghi(body)) {
-    const imponibile = toBig(riepilogo.ImponibileImporto);
-    const imposta = toBig(riepilogo.Imposta);
-    total =
-      imponibile === undefined || imposta === undefined
-        ? undefined
-        : total?.plus(imponibile).plus(imposta);
-  }
+  const arrotondamento = documento.Arrotondamento ?? '0';
+  const total = sum(new Big(0), [
+    arrotondamento,
+    ...riepiloghi(body).flatMap(({ block: riepilogo }) => [
+      riepilogo.ImponibileImporto,
+      riepilogo.Imposta,
+    ]),
+  ]);
   return total === undefined ? undefined : round2(total);
 }
 

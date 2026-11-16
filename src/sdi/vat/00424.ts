@@ -1,5 +1,6 @@
+import { toBig } from '../../arithmetic.js';
 import type { Problem } from '../../problem.js';
-import { bodies, casse, lines, riepiloghi, toBig } from '../fields.js';
+import { bodies, casse, lines, riepiloghi } from '../fields.js';
 import { type SdiRule, sdiError } from '../rule.js';
 import { ELENCO_CONTROLLI, source } from '../sources.js';
 

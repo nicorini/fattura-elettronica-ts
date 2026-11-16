@@ -1,8 +1,9 @@
 import type Big from 'big.js';
+import { toBig } from '../../arithmetic.js';
 import type { DettaglioLinee } from '../../generated/model.js';
 import { type Computed, negativeImporto, prezzoTotale, type Reading } from '../../prezzo-totale.js';
 import type { Problem } from '../../problem.js';
-import { block as asBlock, bodies, lines, list, toBig } from '../fields.js';
+import { block as asBlock, bodies, lines, list } from '../fields.js';
 import { type SdiRule, sdiWarning } from '../rule.js';
 import { ALLEGATO_A, ELENCO_CONTROLLI, source } from '../sources.js';
 import { compareAmount, type RoundDifference, withinTolerance } from './tolerance.js';

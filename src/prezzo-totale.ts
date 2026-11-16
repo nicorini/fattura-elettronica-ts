@@ -1,9 +1,9 @@
 // The formula of PrezzoTotale, in one place: the check 00423 tries it with every reading of the
 // points the sources leave open, createInvoice with the only one its input allows.
 import type Big from 'big.js';
+import { round2, toBig } from './arithmetic.js';
 import type { DettaglioLinee, ScontoMaggiorazione } from './generated/model.js';
-import { block as asBlock, list, toBig } from './sdi/fields.js';
-import { round2 } from './sdi/vat/values.js';
+import { block as asBlock, list } from './sdi/fields.js';
 
 /** One way to read the blocks of a line. */
 export interface Reading {
@@ -28,7 +28,9 @@ export function negativeImporto(block: ScontoMaggiorazione | undefined): boolean
 }
 
 // PrezzoTotale = PrezzoUnitario, adjusted by each ScontoMaggiorazione in order, × Quantita (1 if
-// missing), with no rounding: undefined when a value can't be read. Each block changes the unit price already changed by the ones before it ("a cascata"). A block
+// missing), with no rounding: undefined when a value can't be read.
+//
+// Each block changes the unit price already changed by the ones before it ("a cascata"). A block
 // with both Importo and Percentuale counts one of the two. The Elenco controlli 2.0, p. 27, says
 // "In caso di presenza contemporanea di Importo e Percentuale, si considera solo il primo ai fini
 // del calcolo", which doesn't tell which one: Importo is named first, Percentuale comes first in

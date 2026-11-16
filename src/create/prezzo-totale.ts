@@ -1,7 +1,7 @@
 // Step 2 of createInvoice: PrezzoTotale of each line without one.
+import { round2 } from '../arithmetic.js';
 import { negativeImporto, prezzoTotale } from '../prezzo-totale.js';
 import { type Body, blocks, lines } from '../sdi/fields.js';
-import { round2 } from '../sdi/vat/values.js';
 import type { Problems } from './problems.js';
 
 /**

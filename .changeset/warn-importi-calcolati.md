@@ -4,7 +4,8 @@
 
 `validate` avvisa quando un importo che `createInvoice` saprebbe calcolare non torna con i conti,
 per chi scrive la fattura a mano o legge quelle ricevute. Sono avvisi: `build` scrive comunque la
-fattura, e ognuno ha `expected` (il valore calcolato) e `actual` (quello in fattura).
+fattura, e ognuno ha `expected` (il valore calcolato), `actual` (quello in fattura) e `source`
+(la fonte della formula).
 
 - Nuovo codice `warn.importoContributoCassa`: `ImportoContributoCassa` diverso da
   `ImponibileCassa` × `AlCassa` / 100, arrotondato al centesimo; solo se c'è `ImponibileCassa`.

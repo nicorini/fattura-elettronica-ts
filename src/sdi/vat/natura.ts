@@ -1,9 +1,10 @@
 // The check shared by 00400/00401 (lines), 00413/00414 (cassa) and 00429/00430 (summaries). A
 // rate of zero needs a Natura, which says why there is no VAT; any other rate must have none,
 // except where TipoDocumento TD16 allows both (lines and summaries only).
+import { toBig } from '../../arithmetic.js';
 import type { SdiErrorCode } from '../../codes.js';
 import type { Problem } from '../../problem.js';
-import { type Located, refusedNatura, toBig } from '../fields.js';
+import { type Located, refusedNatura } from '../fields.js';
 import { sdiError } from '../rule.js';
 import { ELENCO_CONTROLLI, source } from '../sources.js';
 

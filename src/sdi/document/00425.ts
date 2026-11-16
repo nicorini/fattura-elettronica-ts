@@ -5,13 +5,13 @@ import { ELENCO_CONTROLLI, source } from '../sources.js';
 
 /** 00425: the number of the invoice must contain at least one digit. */
 export const rule00425: SdiRule = (fattura) =>
-  bodies(fattura).flatMap(({ datiDocumento, documento }) => {
+  bodies(fattura).flatMap(({ datiDocumento, documentoPath }) => {
     const numero = text(datiDocumento?.Numero);
     if (numero === undefined || /[0-9]/.test(numero)) return [];
     return [
       sdiError(
         '00425',
-        `${documento}.Numero`,
+        `${documentoPath}.Numero`,
         `Il numero della fattura (${numero}) non contiene cifre: ne serve almeno una.`,
         source(ELENCO_CONTROLLI, 32),
       ),

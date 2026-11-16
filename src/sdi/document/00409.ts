@@ -10,8 +10,8 @@ import { ELENCO_CONTROLLI, source } from '../sources.js';
  * number of an invoice of another type. Reported on the later body.
  */
 export const rule00409: SdiRule = (fattura) => {
-  const documenti = bodies(fattura).map(({ datiDocumento, documento }) => ({
-    documento,
+  const documenti = bodies(fattura).map(({ datiDocumento, documentoPath }) => ({
+    documento: documentoPath,
     dati: datiDocumento,
   }));
   const problems = [];

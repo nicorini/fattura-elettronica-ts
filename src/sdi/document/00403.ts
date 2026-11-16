@@ -10,13 +10,13 @@ import { ELENCO_CONTROLLI, source } from '../sources.js';
 export const rule00403: SdiRule = (fattura, { today }) => {
   if (today === undefined) return [];
   const problems = [];
-  for (const { datiDocumento, documento } of bodies(fattura)) {
+  for (const { datiDocumento, documentoPath } of bodies(fattura)) {
     const data = day(datiDocumento?.Data);
     if (data === undefined || data <= today) continue;
     problems.push(
       sdiError(
         '00403',
-        `${documento}.Data`,
+        `${documentoPath}.Data`,
         `La data della fattura (${data}) è successiva a oggi (${today}): il SdI la scarta.`,
         source(ELENCO_CONTROLLI, 11),
       ),

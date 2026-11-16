@@ -27,8 +27,8 @@ export const rule00471and00472: SdiRule = (fattura) => {
   if (ids.some(([paese, codice]) => paese === undefined || codice === undefined)) return [];
   const same = ids[0]?.[0] === ids[1]?.[0] && ids[0]?.[1] === ids[1]?.[1];
   const problems: Problem[] = [];
-  for (const { documento, tipo } of documentTypes(fattura)) {
-    const path = `${documento}.TipoDocumento`;
+  for (const { documentoPath, tipo } of documentTypes(fattura)) {
+    const path = `${documentoPath}.TipoDocumento`;
     if (same && isOneOf(tipo, MUST_DIFFER.error)) {
       problems.push(sdiError('00471', path, differ(tipo), source(ELENCO_CONTROLLI, 40)));
     } else if (same && isOneOf(tipo, MUST_DIFFER.warning)) {

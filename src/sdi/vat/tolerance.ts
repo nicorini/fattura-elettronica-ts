@@ -1,10 +1,11 @@
 // The three checks on amounts (00421, 00422, 00423) share how a difference is judged.
 
 import type Big from 'big.js';
+import { round2 } from '../../arithmetic.js';
 import type { SdiErrorCode, SdiWarningCode } from '../../codes.js';
 import type { Problem } from '../../problem.js';
 import { libraryWarning, sdiError, sdiWarning } from '../rule.js';
-import { amount, round2 } from './values.js';
+import { amount } from './values.js';
 
 /**
  * A check whose difference is rounded to the cent before the comparison: a difference above the

@@ -21,15 +21,15 @@ import { fillImportoTotaleDocumento } from './totale.js';
  * order, × `Quantita`, 1 if missing); `ImportoContributoCassa` of each `DatiCassaPrevidenziale`
  * (`ImponibileCassa` × `AlCassa` / 100, with `ImponibileCassa` required); one `DatiRiepilogo` per
  * `AliquotaIVA` and `Natura` of lines and `DatiCassaPrevidenziale`, in order of first appearance,
- * with `ImponibileImporto` (their sum plus its `Arrotondamento`) and `Imposta`; `ImportoRitenuta`
- * of a single RT01 or RT02 `DatiRitenuta` (`AliquotaRitenuta` % of the `PrezzoTotale` of the lines
- * and the `ImportoContributoCassa` of the `DatiCassaPrevidenziale` with `Ritenuta` SI);
- * `ImportoTotaleDocumento` (Σ `ImponibileImporto` + Σ `Imposta` + `Arrotondamento`), only without a
- * `ScontoMaggiorazione` of the document; `ImportoPagamento` of the only `DettaglioPagamento` of the
- * body (the total less every `ImportoRitenuta` and the `Imposta` with `EsigibilitaIVA` S, the split
- * payment), without adding a `DatiPagamento`. A `DatiRiepilogo` of the input with the same `AliquotaIVA`
- * and `Natura` gives its fields (`EsigibilitaIVA`, `RiferimentoNormativo`, the amounts), and the
- * rest is computed.
+ * with `AliquotaIVA` as the XSD writes it (`22.00`), `ImponibileImporto` (their sum plus its
+ * `Arrotondamento`) and `Imposta`; `ImportoRitenuta` of a single RT01 or RT02 `DatiRitenuta`
+ * (`AliquotaRitenuta` % of the `PrezzoTotale` of the lines and the `ImportoContributoCassa` of the
+ * `DatiCassaPrevidenziale` with `Ritenuta` SI); `ImportoTotaleDocumento` (Σ `ImponibileImporto` +
+ * Σ `Imposta` + `Arrotondamento`), only without a `ScontoMaggiorazione` of the document;
+ * `ImportoPagamento` of the only `DettaglioPagamento` of the body (the total less every
+ * `ImportoRitenuta` and the `Imposta` with `EsigibilitaIVA` S, the split payment), without adding a
+ * `DatiPagamento`. A `DatiRiepilogo` of the input with the same `AliquotaIVA` and `Natura` gives
+ * its fields (`EsigibilitaIVA`, `RiferimentoNormativo`, the amounts), and the rest is computed.
  *
  * It doesn't check the structure: `build` and `validate` do, on the object it returns.
  *
@@ -43,10 +43,10 @@ export function createInvoice(input: CreateInvoiceInput): FatturaElettronica {
   for (const body of bodies(fattura)) {
     fillPrezzoTotale(body, problems);
     fillImportoContributoCassa(body, problems);
-    fillDatiRiepilogo(body);
+    const riepiloghi = fillDatiRiepilogo(body);
     fillImportoRitenuta(body, problems);
-    fillImportoTotaleDocumento(body, problems);
-    fillImportoPagamento(body, problems);
+    fillImportoTotaleDocumento(body, riepiloghi, problems);
+    fillImportoPagamento(body, riepiloghi, problems);
   }
   if (problems.list.length > 0) throw new CreateInvoiceError(problems.list);
   return fattura;

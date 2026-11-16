@@ -29,6 +29,6 @@ function check(
 /** 00437 (document) and 00438 (lines), Elenco controlli 2.0, p. 36. */
 export const rule00437and00438: SdiRule = (fattura) =>
   bodies(fattura).flatMap((body) => [
-    ...check(body.datiDocumento?.ScontoMaggiorazione, body.documento, '00437'),
+    ...check(body.datiDocumento?.ScontoMaggiorazione, body.documentoPath, '00437'),
     ...lines(body).flatMap(({ block, path }) => check(block.ScontoMaggiorazione, path, '00438')),
   ]);

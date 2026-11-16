@@ -11,4 +11,6 @@ nel totale, ma il cliente la versa all'Erario). `ImportoPagamento` diventa facol
 
 Con più `DettaglioPagamento` (pagamento a rate, o più blocchi `DatiPagamento`) la divisione la
 decidi tu: se ne manca uno, `createInvoice` lancia `CreateInvoiceError`. Nuovo codice
-`create.importoPagamento`.
+`create.importoPagamento`, che segnala anche l'unica rata che non si può calcolare perché un
+`DatiRiepilogo` in split payment scritto da te non ha l'`Imposta` e la libreria non può
+completarlo.

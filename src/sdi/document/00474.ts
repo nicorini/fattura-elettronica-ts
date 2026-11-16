@@ -1,4 +1,5 @@
-import { documentTypes, lines, toBig } from '../fields.js';
+import { toBig } from '../../arithmetic.js';
+import { documentTypes, lines } from '../fields.js';
 import type { SdiRule } from '../rule.js';
 import { sdiError } from '../rule.js';
 import { ELENCO_CONTROLLI, source } from '../sources.js';

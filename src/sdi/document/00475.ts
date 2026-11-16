@@ -22,10 +22,10 @@ export const rule00475: SdiRule = (fattura) => {
   if (cessionarioAnagrafici === undefined || cessionario !== undefined) return [];
   return documentTypes(fattura)
     .filter(({ tipo }) => isOneOf(tipo, NEED_PARTITA_IVA))
-    .map(({ documento, tipo }) =>
+    .map(({ documentoPath, tipo }) =>
       sdiError(
         '00475',
-        `${documento}.TipoDocumento`,
+        `${documentoPath}.TipoDocumento`,
         `Con TipoDocumento ${tipo} il cessionario/committente deve avere IdFiscaleIVA.`,
         source(ELENCO_CONTROLLI, 44),
       ),

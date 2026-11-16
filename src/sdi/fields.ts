@@ -3,7 +3,7 @@
 // hold items that are not objects, a leaf may not be a string, a decimal may have spaces around
 // it. These helpers turn all that into "nothing to judge": the problem of structure is already
 // reported, and a check must never throw.
-import Big from 'big.js';
+import { toBig } from '../arithmetic.js';
 import { codeLists } from '../generated/code-lists.js';
 import type {
   DatiAnagraficiCessionario,
@@ -56,12 +56,11 @@ export function blocks<T>(value: T | readonly T[] | undefined, path: string): Lo
 }
 
 /** A body of the invoice, its path and its `DatiGeneraliDocumento`. */
-export interface Body {
-  readonly body: FatturaElettronicaBody;
+export interface Body extends Located<FatturaElettronicaBody> {
   /** `FatturaElettronicaBody[0]`. */
   readonly path: string;
   /** The path of its `DatiGeneraliDocumento`. */
-  readonly documento: string;
+  readonly documentoPath: string;
   readonly datiDocumento: DatiGeneraliDocumento | undefined;
 }
 
@@ -69,16 +68,16 @@ export interface Body {
 export function bodies(fattura: FatturaElettronica): Body[] {
   return blocks(fattura.FatturaElettronicaBody, 'FatturaElettronicaBody').map(
     ({ block: body, path }) => ({
-      body,
+      block: body,
       path,
-      documento: `${path}.DatiGenerali.DatiGeneraliDocumento`,
+      documentoPath: `${path}.DatiGenerali.DatiGeneraliDocumento`,
       datiDocumento: block(block(body.DatiGenerali)?.DatiGeneraliDocumento),
     }),
   );
 }
 
 /** The lines of a body (`DettaglioLinee`). */
-export function lines({ body, path }: Body): Located<DettaglioLinee>[] {
+export function lines({ block: body, path }: Body): Located<DettaglioLinee>[] {
   return blocks(
     block(body.DatiBeniServizi)?.DettaglioLinee,
     `${path}.DatiBeniServizi.DettaglioLinee`,
@@ -86,7 +85,7 @@ export function lines({ body, path }: Body): Located<DettaglioLinee>[] {
 }
 
 /** The summaries of a body (`DatiRiepilogo`). */
-export function riepiloghi({ body, path }: Body): Located<DatiRiepilogo>[] {
+export function riepiloghi({ block: body, path }: Body): Located<DatiRiepilogo>[] {
   return blocks(
     block(body.DatiBeniServizi)?.DatiRiepilogo,
     `${path}.DatiBeniServizi.DatiRiepilogo`,
@@ -94,8 +93,8 @@ export function riepiloghi({ body, path }: Body): Located<DatiRiepilogo>[] {
 }
 
 /** The contributions to a pension fund of a body (`DatiCassaPrevidenziale`). */
-export function casse({ datiDocumento, documento }: Body): Located<DatiCassaPrevidenziale>[] {
-  return blocks(datiDocumento?.DatiCassaPrevidenziale, `${documento}.DatiCassaPrevidenziale`);
+export function casse({ datiDocumento, documentoPath }: Body): Located<DatiCassaPrevidenziale>[] {
+  return blocks(datiDocumento?.DatiCassaPrevidenziale, `${documentoPath}.DatiCassaPrevidenziale`);
 }
 
 /**
@@ -140,12 +139,6 @@ export function day(value: unknown): string | undefined {
   return text(value)
     ?.trim()
     .match(/^\d{4}-\d{2}-\d{2}(?=$|Z|[+-]\d{2}:\d{2}$)/)?.[0];
-}
-
-/** A decimal of the invoice (`xs:decimal` allows spaces around it), or `undefined`. */
-export function toBig(value: unknown): Big | undefined {
-  const trimmed = text(value)?.trim();
-  return trimmed !== undefined && /^-?\d+(?:\.\d+)?$/.test(trimmed) ? new Big(trimmed) : undefined;
 }
 
 /** A rate as a key, so `22.00` and ` 22.00 ` group together; `undefined` if not a decimal. */

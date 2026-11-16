@@ -11,7 +11,7 @@ import { ALLEGATO_A, ELENCO_CONTROLLI, source } from '../sources.js';
  */
 export const rule00418: SdiRule = (fattura) => {
   const problems: Problem[] = [];
-  for (const { body, path, datiDocumento } of bodies(fattura)) {
+  for (const { block: body, path, datiDocumento } of bodies(fattura)) {
     const data = day(datiDocumento?.Data);
     if (data === undefined) continue;
     const collegate = block(body.DatiGenerali)?.DatiFattureCollegate;

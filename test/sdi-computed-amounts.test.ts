@@ -80,8 +80,9 @@ test.each(officialExamples.filter((name) => !/FPR0[23]$/.test(name)))(
 );
 
 // ImponibileCassa: "importo totale del volume di affari sul quale occorre applicare il contributo
-// di cassa previdenziale"; AlCassa: "aliquota del contributo"; ImportoContributoCassa: "importo del
-// contributo alla cassa di appartenenza" (Specifiche tecniche FatturaPA 1.4, pag. 19,
+// di cassa previdenziale"; AlCassa: "aliquota contributiva (espressa in percentuale %) prevista per
+// la cassa di previdenza"; ImportoContributoCassa: "importo del contributo relativo alla cassa di
+// previdenza della categoria professionale" (Specifiche tecniche FatturaPA 1.4, pag. 19,
 // https://www.fatturapa.gov.it/export/documenti/fatturapa/v1.4/Specifiche_tecniche_del_formato_FatturaPA_V1.4.pdf).
 describe('warn.importoContributoCassa', () => {
   const path = `${DOCUMENTO}.DatiCassaPrevidenziale[0].ImportoContributoCassa`;
@@ -96,6 +97,7 @@ describe('warn.importoContributoCassa', () => {
       path,
       message: expect.stringContaining('ImponibileCassa'),
       severity: 'warning',
+      source: 'Specifiche tecniche del formato FatturaPA 1.4, p. 19',
       expected: '40.00',
       actual: '40.01',
     });
@@ -132,8 +134,9 @@ function ritenuta(fattura: FatturaElettronica) {
   return result;
 }
 
-// The Ritenuta flag of a line: "linea soggetta a ritenuta"; of a cassa: "il contributo cassa è
-// soggetto a ritenuta" (Specifiche tecniche FatturaPA 1.4, pagg. 19 and 26,
+// The Ritenuta flag of a line: "la linea della fattura si riferisce ad una cessione/prestazione
+// soggetta a ritenuta"; of a cassa: "il contributo cassa è soggetto a ritenuta" (Specifiche
+// tecniche FatturaPA 1.4, pagg. 26 and 19,
 // https://www.fatturapa.gov.it/export/documenti/fatturapa/v1.4/Specifiche_tecniche_del_formato_FatturaPA_V1.4.pdf).
 describe('warn.importoRitenuta', () => {
   const path = `${DOCUMENTO}.DatiRitenuta[0].ImportoRitenuta`;
@@ -146,15 +149,17 @@ describe('warn.importoRitenuta', () => {
       path,
       message: expect.stringContaining('AliquotaRitenuta'),
       severity: 'warning',
+      source: 'Specifiche tecniche del formato FatturaPA 1.4, pp. 19, 26',
       expected: '208.00',
       actual: '208.01',
     });
   });
 
   // The withholding of an agent is "commisurata al 50 per cento dell'ammontare delle provvigioni",
-  // or to 20% with employees (art. 25-bis, c. 2 DPR 600/73; from 2027 art. 39, c. 2 D.Lgs.
-  // 33/2025,
-  // https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.del.presidente.della.repubblica:1973-09-29;600~art25bis):
+  // or to 20% with employees (art. 25-bis, c. 2 DPR 600/73,
+  // https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.del.presidente.della.repubblica:1973-09-29;600~art25bis;
+  // from 2027 art. 39, c. 2 of the Testo unico annexed to D.Lgs. 33/2025,
+  // https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.legislativo:2025-03-24;33):
   // an ImportoRitenuta below the full base is legitimate.
   test('an ImportoRitenuta below the full base, as for an agent, is not a warning', () => {
     const fattura = professionista();
@@ -213,6 +218,7 @@ describe('warn.importoTotaleDocumento', () => {
       path,
       message: expect.stringContaining('DatiRiepilogo'),
       severity: 'warning',
+      source: 'Rappresentazione tabellare del tracciato fattura ordinaria, 2.1.1.9',
       expected: '1268.80',
       actual: '1060.80',
     });
@@ -239,10 +245,11 @@ function dettagli(fattura: FatturaElettronica) {
   );
 }
 
-// The ritenuta is withheld by the customer "all'atto del pagamento" (art. 25 DPR 600/73), so it
-// lowers what the customer pays. The Agenzia's example 6.1: total 12852.00 + 2698.92, ritenuta
-// 2520.00, ImportoPagamento 13030.92 (Suggerimenti per la compilazione della FatturaPA 1.6,
-// pagg. 106-109,
+// The ritenuta is withheld by the customer "all'atto del pagamento" (art. 25 DPR 600/73,
+// https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.del.presidente.della.repubblica:1973-09-29;600~art25!vig=2026-01-01),
+// so it lowers what the customer pays. The Agenzia's example 6.1: total 12852.00 + 2698.92,
+// ritenuta 2520.00, ImportoPagamento 13030.92 (Suggerimenti per la compilazione della FatturaPA
+// 1.6, pagg. 106-109,
 // https://www.fatturapa.gov.it/export/documenti/Suggerimenti_Compilazione_FatturaPA_1.6.pdf).
 describe('warn.importoPagamento', () => {
   const path = 'FatturaElettronicaBody[0].DatiPagamento[0].DettaglioPagamento[0].ImportoPagamento';
@@ -258,15 +265,20 @@ describe('warn.importoPagamento', () => {
         path,
         message: expect.stringContaining('ImportoTotaleDocumento'),
         severity: 'warning',
+        source: 'Suggerimenti per la compilazione della FatturaPA 1.6, pp. 106–117',
         expected: '1060.80',
         actual: '1268.80',
       },
     ]);
   });
 
-  // Split payment: the VAT is in the invoice, but the customer "versa" it to the Erario (art.
-  // 17-ter, c. 1 DPR 633/72). The Agenzia's example 6.3 has riepilogo 465.50 + 97.65 with
-  // EsigibilitaIVA S and ImportoPagamento 465.50 (Suggerimenti 1.6, p. 117).
+  // Split payment: the VAT is in the invoice, but "l'imposta è in ogni caso versata" by the
+  // customer (art. 17-ter, c. 1 DPR 633/72,
+  // https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.del.presidente.della.repubblica:1972-10-26;633~art17ter!vig=2026-01-01).
+  // The Agenzia's example 6.3 has riepilogo 465.50 + 97.65 with EsigibilitaIVA S and
+  // ImportoPagamento 465.50 (Suggerimenti 1.6, p. 117); its Imposta is an error of the source,
+  // 465.50 × 21% being 97.755. The test doesn't use those amounts: it checks the rule on its own
+  // invoice, where the payment is the total less the ritenuta and the split VAT.
   test('in split payment the customer pays without the VAT', () => {
     const fattura = professionista();
     const riepilogo = firstBody(fattura).DatiBeniServizi.DatiRiepilogo[0];

@@ -1,6 +1,7 @@
 import Big from 'big.js';
+import { toBig } from '../../arithmetic.js';
 import type { Problem } from '../../problem.js';
-import { type Body, bodies, casse, lines, rateKey, riepiloghi, toBig } from '../fields.js';
+import { type Body, bodies, casse, lines, rateKey, riepiloghi } from '../fields.js';
 import type { SdiRule } from '../rule.js';
 import { ELENCO_CONTROLLI, source } from '../sources.js';
 import { compareAmount } from './tolerance.js';

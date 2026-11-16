@@ -1,12 +1,12 @@
 // Step 1 of createInvoice: a copy of the input where every amount, rate and quantity given as a
 // `number` is a string, as `decimal(n)` writes it. The values of the user stay as they are
 // otherwise: a value the model doesn't allow is left for `build` to report.
+import { toBig } from '../arithmetic.js';
 import { decimal } from '../decimal.js';
 import { inputDecimalTypes } from '../generated/input.js';
 import type { FatturaElettronica } from '../generated/model.js';
 import { complexTypes, root } from '../generated/schema.js';
 import type { ElementSpec } from '../schema/spec.js';
-import { toBig } from '../sdi/fields.js';
 import type { Problems } from './problems.js';
 
 const DECIMALS: ReadonlySet<string> = new Set(inputDecimalTypes);

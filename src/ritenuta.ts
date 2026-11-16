@@ -1,9 +1,9 @@
 // The formula of ImportoRitenuta on the full base, in one place: createInvoice fills the only RT01
 // or RT02 block with it, and validate compares it.
 import Big from 'big.js';
+import { percentOf, sum, toBig } from './arithmetic.js';
 import type { DatiRitenuta } from './generated/model.js';
-import { type Body, blocks, casse, type Located, lines, toBig } from './sdi/fields.js';
-import { round2 } from './sdi/vat/values.js';
+import { type Body, blocks, casse, type Located, lines } from './sdi/fields.js';
 
 /**
  * AliquotaRitenuta % of the PrezzoTotale of the lines and the ImportoContributoCassa of the casse
@@ -11,29 +11,25 @@ import { round2 } from './sdi/vat/values.js';
  */
 export function importoRitenuta(body: Body, ritenuta: DatiRitenuta): Big | undefined {
   const aliquota = toBig(ritenuta.AliquotaRitenuta);
-  let base: Big | undefined = new Big(0);
-  for (const { block: linea } of lines(body)) {
-    if (linea.Ritenuta === 'SI') base = add(base, linea.PrezzoTotale);
-  }
-  for (const { block: cassa } of casse(body)) {
-    if (cassa.Ritenuta === 'SI') base = add(base, cassa.ImportoContributoCassa);
-  }
+  const base = sum(new Big(0), [
+    ...lines(body).flatMap(({ block: linea }) =>
+      linea.Ritenuta === 'SI' ? [linea.PrezzoTotale] : [],
+    ),
+    ...casse(body).flatMap(({ block: cassa }) =>
+      cassa.Ritenuta === 'SI' ? [cassa.ImportoContributoCassa] : [],
+    ),
+  ]);
   if (base === undefined || aliquota === undefined) return undefined;
-  return round2(base.times(aliquota).times('0.01'));
+  return percentOf(base, aliquota);
 }
 
 /** The DatiRitenuta of a body. */
 export function datiRitenuta(body: Body): Located<DatiRitenuta>[] {
-  return blocks(body.datiDocumento?.DatiRitenuta, `${body.documento}.DatiRitenuta`);
+  return blocks(body.datiDocumento?.DatiRitenuta, `${body.documentoPath}.DatiRitenuta`);
 }
 
-/** Whether the formula applies: one block only, of type RT01 or RT02. */
-export function computable(ritenute: readonly Located<DatiRitenuta>[]): boolean {
+/** Whether the formula covers the ritenute of a body: a single block, of type RT01 or RT02. */
+export function isSingleRt01OrRt02(ritenute: readonly Located<DatiRitenuta>[]): boolean {
   const tipo = ritenute[0]?.block.TipoRitenuta;
   return ritenute.length === 1 && (tipo === 'RT01' || tipo === 'RT02');
-}
-
-function add(sum: Big | undefined, value: unknown): Big | undefined {
-  const amount = toBig(value);
-  return amount === undefined ? undefined : sum?.plus(amount);
 }

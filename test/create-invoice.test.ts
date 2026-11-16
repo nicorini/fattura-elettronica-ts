@@ -250,6 +250,28 @@ describe('DatiRiepilogo', () => {
     ]);
   });
 
+  test('writes the rate of a summary it creates as 22.00, whatever the first line has', () => {
+    const fattura = createInvoice(
+      withLines(
+        { PrezzoUnitario: '100.00', AliquotaIVA: 22 },
+        { PrezzoUnitario: '10.00', AliquotaIVA: '10' },
+        { PrezzoUnitario: '5.00', AliquotaIVA: ' 4.0 ' },
+      ),
+    );
+    expect(servizi(fattura).DatiRiepilogo.map((riepilogo) => riepilogo.AliquotaIVA)).toEqual([
+      '22.00',
+      '10.00',
+      '4.00',
+    ]);
+  });
+
+  test('keeps the rate of a summary of the user as it is written', () => {
+    const input = withLines({ PrezzoUnitario: '100.00', AliquotaIVA: '22.00' });
+    inputBody(input).DatiBeniServizi.DatiRiepilogo = [{ AliquotaIVA: ' 22.0 ' }];
+    const fattura = createInvoice(input);
+    expect(servizi(fattura).DatiRiepilogo[0]?.AliquotaIVA).toBe(' 22.0 ');
+  });
+
   test('leaves a DatiRiepilogo of the user with no line of its rate as it is, after the others', () => {
     const input = withLines({ PrezzoUnitario: '100.00', AliquotaIVA: '22.00' });
     const extra = { AliquotaIVA: '10.00', ImponibileImporto: '0.00', Imposta: '0.00' };
@@ -281,16 +303,16 @@ function casse(fattura: FatturaElettronica) {
 }
 
 // ImponibileCassa: "importo totale del volume di affari sul quale occorre applicare il contributo
-// di cassa previdenziale"; ImportoContributoCassa: "importo del contributo alla cassa di
-// appartenenza" (Specifiche tecniche FatturaPA 1.4, pag. 19,
+// di cassa previdenziale"; ImportoContributoCassa: "importo del contributo relativo alla cassa di
+// previdenza della categoria professionale" (Specifiche tecniche FatturaPA 1.4, pag. 19,
 // https://www.fatturapa.gov.it/export/documenti/fatturapa/v1.4/Specifiche_tecniche_del_formato_FatturaPA_V1.4.pdf).
 describe('DatiCassaPrevidenziale', () => {
   // The contributo integrativo is in the VAT base of the service: "concorrono a formare la base
   // imponibile le maggiorazioni ... addebitate dai soggetti iscritti in albi professionali a
   // titolo di contributo integrativo dovuto alla cassa di previdenza" (art. 16 D.L. 41/1995,
-  // https://www.edizionieuropee.it/law/html/88/zn95_19_196.html), as the Agenzia repeats in
-  // Circolare 5/E/2021, §3.4, p. 21
-  // (https://www.dirittobancario.it/wp-content/uploads/sites/default/files/allegati/circolare_agenzia_delle_entrate_14_maggio_2021_n._5-e.pdf).
+  // https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.legge:1995-02-23;41~art16), as the
+  // Agenzia repeats in Circolare 5/E/2021, §3.4, p. 21
+  // (https://www.agenziaentrate.gov.it/portale/documents/20143/3431983/Circolare+n.+5.pdf/f4a74dc1-9533-e7f4-c8bc-20a888ec46fe).
   test('computes the contributo of a professional cassa at 4%, in the summary of its VAT rate', () => {
     const fattura = create(
       withCasse([{ PrezzoUnitario: '1000.00', AliquotaIVA: '22.00' }], {
@@ -309,8 +331,10 @@ describe('DatiCassaPrevidenziale', () => {
   });
 
   // The rivalsa INPS of the gestione separata is "una percentuale nella misura del 4 per cento dei
-  // compensi lordi" (art. 1, c. 212 L. 662/1996), and it "concorre a formare la base imponibile
-  // dell'imposta sul valore aggiunto" (messaggio INPS 7751 del 7/5/2012, pag. 2,
+  // compensi lordi" (art. 1, c. 212 L. 662/1996,
+  // https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:legge:1996-12-23;662~art1), and it
+  // "concorre a formare la base imponibile dell'imposta sul valore aggiunto" (messaggio INPS 7751
+  // del 7/5/2012, pag. 2,
   // https://servizi2.inps.it/MessaggiZIP/Messaggio%20numero%207751%20del%2007-05-2012.pdf), where
   // the law is quoted in note 1. In the format it is the cassa "TC22 INPS" (Specifiche tecniche
   // FatturaPA 1.4, pag. 55).
@@ -407,15 +431,21 @@ function ritenute(fattura: FatturaElettronica) {
   return firstBody(fattura).DatiGenerali.DatiGeneraliDocumento.DatiRitenuta ?? [];
 }
 
-// The Ritenuta flag of a line: "linea soggetta a ritenuta"; of a cassa: "il contributo cassa è
-// soggetto a ritenuta" (Specifiche tecniche FatturaPA 1.4, pagg. 19 and 26,
+// The Ritenuta flag of a line: "la linea della fattura si riferisce ad una cessione/prestazione
+// soggetta a ritenuta"; of a cassa: "il contributo cassa è soggetto a ritenuta" (Specifiche
+// tecniche FatturaPA 1.4, pagg. 26 and 19,
 // https://www.fatturapa.gov.it/export/documenti/fatturapa/v1.4/Specifiche_tecniche_del_formato_FatturaPA_V1.4.pdf).
 // The base is what the flags mark; the rate is the one the user writes.
 describe('DatiRitenuta', () => {
-  // A professional's fee bears "una ritenuta del 20 per cento a titolo di acconto" (art. 25 DPR
-  // 600/73; from 2027 art. 38, c. 1 D.Lgs. 33/2025, GU n. 71 del 26/3/2025, S.O. n. 8/L). The base
-  // holds the fees and the rivalsa INPS of the gestione separata, but not the spese anticipate in
-  // nome e per conto del cliente (AdE, "Importi su cui si applica la ritenuta",
+  // A professional's fee bears, "all'atto del pagamento", "una ritenuta del 20 per cento a titolo
+  // di acconto" (art. 25 DPR 600/73,
+  // https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.del.presidente.della.repubblica:1973-09-29;600~art25!vig=2026-01-01,
+  // where Normattiva still prints the original 15% and gives the raise to 20% in its notes; from
+  // 2027 art. 38, c. 1 of the Testo unico annexed to D.Lgs. 33/2025, GU n. 71 del 26/3/2025, S.O.
+  // n. 8/L, with the 20% in its text,
+  // https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.legislativo:2025-03-24;33). The
+  // base holds the fees and the rivalsa INPS of the gestione separata, but not the spese
+  // anticipate in nome e per conto del cliente (AdE, "Importi su cui si applica la ritenuta",
   // https://www.agenziaentrate.gov.it/portale/schede/pagamenti/versamento-modello-f24-ritenute-su-reddito-di-lavoro-autonomo-f24_rit_red_lav_aut/importi-su-cui-si-applica-la-ritenuta-f24_rit_red_lav_aut).
   test('computes RT01 at 20% on the fees and the rivalsa INPS, leaving out the N1 expenses', () => {
     const input = withRitenute(
@@ -470,7 +500,8 @@ describe('DatiRitenuta', () => {
   });
 
   // The withholding of an agent is "commisurata al 50 per cento dell'ammontare delle provvigioni"
-  // (art. 25-bis, c. 2 DPR 600/73; from 2027 art. 39, c. 2 D.Lgs. 33/2025) at the rate of the first
+  // (art. 25-bis, c. 2 DPR 600/73; from 2027 art. 39, c. 2 D.Lgs. 33/2025,
+  // https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.legislativo:2025-03-24;33) at the rate of the first
   // IRPEF bracket, 23% (AdE, "Aliquote e calcolo dell'Irpef",
   // https://www.agenziaentrate.gov.it/portale/imposta-sul-reddito-delle-persone-fisiche-irpef-/aliquote-e-calcolo-dell-irpef).
   // The format doesn't say which share: the user writes the amount, and it stays.
@@ -556,11 +587,12 @@ function importiPagamento(fattura: FatturaElettronica): (string | undefined)[] {
   );
 }
 
-// The ritenuta is withheld by the customer "all'atto del pagamento" (art. 25 DPR 600/73), so it
-// lowers what the customer pays, not the total. The Agenzia's examples of a professional subject
-// to ritenuta: 6.1, riepilogo 12852.00 + 2698.92, ImportoRitenuta 2520.00, ImportoPagamento
-// 13030.92 (pagg. 106-109); 6.2, 1664.00 + 349.44, ritenuta 332.80, ImportoPagamento 1680.64
-// (pagg. 110-113) (Suggerimenti per la compilazione della FatturaPA 1.6,
+// The ritenuta is withheld by the customer "all'atto del pagamento" (art. 25 DPR 600/73,
+// https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.del.presidente.della.repubblica:1973-09-29;600~art25!vig=2026-01-01),
+// so it lowers what the customer pays, not the total. The Agenzia's examples of a professional
+// subject to ritenuta: 6.1, riepilogo 12852.00 + 2698.92, ImportoRitenuta 2520.00,
+// ImportoPagamento 13030.92 (pagg. 106-109); 6.2, 1664.00 + 349.44, ritenuta 332.80,
+// ImportoPagamento 1680.64 (pagg. 110-113) (Suggerimenti per la compilazione della FatturaPA 1.6,
 // https://www.fatturapa.gov.it/export/documenti/Suggerimenti_Compilazione_FatturaPA_1.6.pdf).
 describe('DatiPagamento', () => {
   test('pays the total less the ritenuta: example 6.1, cassa TC02 not subject to ritenuta', () => {
@@ -612,10 +644,13 @@ describe('DatiPagamento', () => {
   // Split payment: the suppliers "emettono la fattura secondo quanto previsto dall'art. 21 del
   // decreto n. 633 del 1972 con l'annotazione 'scissione dei pagamenti'" (DM 23 gennaio 2015,
   // art. 2, c. 1, GU n. 27 del 3/2/2015,
-  // https://www.gazzettaufficiale.it/eli/id/2015/02/03/15A00695/sg): the VAT is in the invoice,
-  // but the customer "versa" it to the Erario (art. 17-ter, c. 1 DPR 633/72). The Agenzia's
-  // example 6.3 has riepilogo 465.50 + 97.65 with EsigibilitaIVA S and ImportoPagamento 465.50
-  // (Suggerimenti 1.6, p. 117).
+  // https://www.gazzettaufficiale.it/eli/id/2015/02/03/15A00690/sg): the VAT is in the invoice,
+  // but "l'imposta è in ogni caso versata" by the customer (art. 17-ter, c. 1 DPR 633/72,
+  // https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.del.presidente.della.repubblica:1972-10-26;633~art17ter!vig=2026-01-01).
+  // The Agenzia's example 6.3 has riepilogo 465.50 + 97.65 with EsigibilitaIVA S and
+  // ImportoPagamento 465.50 (Suggerimenti 1.6, p. 117). Its Imposta is an error of the source:
+  // 465.50 × 21% is 97.755, 97.76 to the cent. So the test takes the line and the rate of the
+  // example and expects 97.76, with an N1 line to show that only the split VAT is left out.
   test('pays the total less the VAT in split payment, which stays in the total', () => {
     const input = withPagamenti(
       withLines(
@@ -676,8 +711,9 @@ describe('DatiPagamento', () => {
     expect(firstBody(create(fpr12Input())).DatiPagamento).toBeUndefined();
   });
 
-  // TP01 is "pagamento a rate" (Specifiche tecniche FatturaPA 1.4, p. 59): how the total splits
-  // into instalments is an agreement between the parties, not in the format.
+  // TP01 is "pagamento a rate" (Specifiche tecniche FatturaPA 1.4, p. 73,
+  // https://www.fatturapa.gov.it/export/documenti/fatturapa/v1.4/Specifiche_tecniche_del_formato_FatturaPA_V1.4.pdf):
+  // how the total splits into instalments is an agreement between the parties, not in the format.
   test('asks for the amount of each instalment without one, across all DatiPagamento', () => {
     const input = withPagamenti(
       fpr12Input(),
@@ -865,6 +901,53 @@ describe('CreateInvoiceError', () => {
     );
   });
 
+  test('create.importoTotaleDocumento for a DatiRiepilogo without amounts that repeats another', () => {
+    const input = withLines({ PrezzoUnitario: '100.00', AliquotaIVA: '22.00' });
+    inputBody(input).DatiBeniServizi.DatiRiepilogo = [
+      { AliquotaIVA: '22.00', EsigibilitaIVA: 'I' },
+      { AliquotaIVA: '22.00', EsigibilitaIVA: 'D' },
+    ];
+    expect(problemsOf(() => createInvoice(input))).toEqual([
+      {
+        code: 'create.importoTotaleDocumento',
+        path: `${DOCUMENTO}.ImportoTotaleDocumento`,
+        message: expect.stringContaining(`${SERVIZI}.DatiRiepilogo[1]`),
+      },
+    ]);
+    expect(problemsOf(() => createInvoice(input))[0]?.message).toContain('stessa AliquotaIVA');
+  });
+
+  test('create.importoTotaleDocumento for a DatiRiepilogo without amounts and no line of its rate', () => {
+    const input = withLines({ PrezzoUnitario: '100.00', AliquotaIVA: '22.00' });
+    inputBody(input).DatiBeniServizi.DatiRiepilogo = [{ AliquotaIVA: '10.00' }];
+    const [problem] = problemsOf(() => createInvoice(input));
+    expect(problem).toEqual({
+      code: 'create.importoTotaleDocumento',
+      path: `${DOCUMENTO}.ImportoTotaleDocumento`,
+      message: expect.stringContaining(`${SERVIZI}.DatiRiepilogo[0]`),
+    });
+    expect(problem?.message).toContain('nessuna riga né cassa');
+  });
+
+  test('create.importoPagamento when only a split payment summary without Imposta stops it', () => {
+    const input = withPagamenti(withLines({ PrezzoUnitario: '100.00', AliquotaIVA: '22.00' }), {
+      CondizioniPagamento: 'TP02',
+      DettaglioPagamento: [{ ModalitaPagamento: 'MP05' }],
+    });
+    inputBody(input).DatiGenerali.DatiGeneraliDocumento.ImportoTotaleDocumento = '132.00';
+    inputBody(input).DatiBeniServizi.DatiRiepilogo = [
+      { AliquotaIVA: '22.00' },
+      { AliquotaIVA: '10.00', EsigibilitaIVA: 'S' },
+    ];
+    const [problem, ...others] = problemsOf(() => createInvoice(input));
+    expect(others).toEqual([]);
+    expect(problem).toEqual({
+      code: 'create.importoPagamento',
+      path: 'FatturaElettronicaBody[0].DatiPagamento[0].DettaglioPagamento[0].ImportoPagamento',
+      message: expect.stringContaining(`${SERVIZI}.DatiRiepilogo[1] non ha Imposta`),
+    });
+  });
+
   test('collects every problem of the input before throwing, with a message naming the first', () => {
     const input = withLines(
       { PrezzoUnitario: 0.1 + 0.2, AliquotaIVA: '22.00' },
@@ -905,10 +988,12 @@ describe('CreateInvoiceError', () => {
 });
 
 describe('the official examples', () => {
-  // FPR02 and FPR03 have summaries that don't match their lines (see test/fixtures/official). No
-  // example has an ImportoTotaleDocumento, which is optional: the one createInvoice adds is
-  // checked by the tests above, and left out of the comparison. None has a DatiCassaPrevidenziale
-  // or a DatiRitenuta; each body has one DettaglioPagamento, so its ImportoPagamento is computed.
+  // FPR02 and FPR03 have summaries that don't match their lines (see test/fixtures/official). The
+  // input keeps each DatiRiepilogo without its amounts: its EsigibilitaIVA and RiferimentoNormativo
+  // are data of the user, which no line holds, so createInvoice can only complete them. No example
+  // has an ImportoTotaleDocumento, which is optional: the one createInvoice adds is checked by the
+  // tests above, and dropped before the comparison. None has a DatiCassaPrevidenziale or a
+  // DatiRitenuta; each body has one DettaglioPagamento, so its ImportoPagamento is computed.
   const examples = officialExamples.filter((name) => !/FPR0[23]$/.test(name));
 
   test.each(examples)('%s: without the computed fields, gives the original back', (name) => {

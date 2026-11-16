@@ -1,5 +1,5 @@
 // Step 5 of createInvoice: ImportoRitenuta of the only RT01 or RT02 DatiRitenuta.
-import { datiRitenuta, importoRitenuta } from '../ritenuta.js';
+import { datiRitenuta, importoRitenuta, isSingleRt01OrRt02 } from '../ritenuta.js';
 import type { Body } from '../sdi/fields.js';
 import type { Problems } from './problems.js';
 
@@ -11,23 +11,24 @@ import type { Problems } from './problems.js';
  */
 export function fillImportoRitenuta(body: Body, problems: Problems): void {
   const ritenute = datiRitenuta(body);
+  const computed = isSingleRt01OrRt02(ritenute);
   for (const { block: ritenuta, path } of ritenute) {
     if (ritenuta.ImportoRitenuta !== undefined) continue;
-    if (ritenute.length > 1) {
+    if (computed) {
+      const importo = importoRitenuta(body, ritenuta);
+      if (importo !== undefined) ritenuta.ImportoRitenuta = importo.toFixed(2);
+    } else if (ritenute.length > 1) {
       problems.add(
         'create.importoRitenuta',
         `${path}.ImportoRitenuta`,
         'Manca ImportoRitenuta: con più DatiRitenuta createInvoice non sa a quale blocco vanno le righe con Ritenuta SI, indica tu ogni importo.',
       );
-    } else if (ritenuta.TipoRitenuta !== 'RT01' && ritenuta.TipoRitenuta !== 'RT02') {
+    } else {
       problems.add(
         'create.importoRitenuta',
         `${path}.ImportoRitenuta`,
         `Manca ImportoRitenuta: createInvoice calcola solo le ritenute RT01 e RT02, per ${String(ritenuta.TipoRitenuta)} indica tu l'importo.`,
       );
-    } else {
-      const importo = importoRitenuta(body, ritenuta);
-      if (importo !== undefined) ritenuta.ImportoRitenuta = importo.toFixed(2);
     }
   }
 }

@@ -1,6 +1,7 @@
 import Big from 'big.js';
+import { toBig } from '../../arithmetic.js';
 import type { Problem } from '../../problem.js';
-import { block, bodies, isOneOf, lines, list, text, toBig } from '../fields.js';
+import { block, bodies, isOneOf, lines, list, text } from '../fields.js';
 import { libraryWarning, type SdiRule } from '../rule.js';
 import { SPECIFICHE_BOLLO, source } from '../sources.js';
 import { amount } from './values.js';
@@ -44,7 +45,7 @@ export const ruleBollo: SdiRule = (fattura) => {
     problems.push(
       libraryWarning(
         'warn.bollo',
-        `${body.documento}.DatiBollo.BolloVirtuale`,
+        `${body.documentoPath}.DatiBollo.BolloVirtuale`,
         `Le righe con natura N2.1, N2.2, N3.5, N3.6 o N4 sommano ${amount(sum)} €, più di 77,47: manca BolloVirtuale=SI, e l'Agenzia integra il bollo d'ufficio chiedendone il pagamento.`,
         { source: source(SPECIFICHE_BOLLO, 4) },
       ),
