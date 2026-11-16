@@ -187,7 +187,8 @@ export interface DettaglioPagamentoInput {
   DataRiferimentoTerminiPagamento?: string;
   GiorniTerminiPagamento?: string;
   DataScadenzaPagamento?: string;
-  ImportoPagamento: string | number;
+  /** Computed by `createInvoice` when missing. */
+  ImportoPagamento?: string | number;
   CodUfficioPostale?: string;
   CognomeQuietanzante?: string;
   NomeQuietanzante?: string;

@@ -313,12 +313,7 @@ describe('DatiCassaPrevidenziale', () => {
     });
     // The same message: the rivalsa "deve essere assoggettata al prelievo alla fonte" (pag. 2).
     inputBody(input).DatiGenerali.DatiGeneraliDocumento.DatiRitenuta = [
-      {
-        TipoRitenuta: 'RT01',
-        ImportoRitenuta: '156.00',
-        AliquotaRitenuta: '20.00',
-        CausalePagamento: 'A',
-      },
+      { TipoRitenuta: 'RT01', AliquotaRitenuta: '20.00', CausalePagamento: 'A' },
     ];
     const fattura = create(input);
     expect(casse(fattura)[0]?.ImportoContributoCassa).toBe('30.00');
@@ -327,6 +322,8 @@ describe('DatiCassaPrevidenziale', () => {
       { AliquotaIVA: '22.00', ImponibileImporto: '780.00', Imposta: '171.60' },
     ]);
     expect(totale(fattura)).toBe('951.60');
+    // (750 + 30) × 20%
+    expect(ritenute(fattura)[0]?.ImportoRitenuta).toBe('156.00');
   });
 
   // The forfettari invoice with "aliquota 0" and Natura N2.2 "Non soggette - altri casi", and fill
@@ -520,6 +517,165 @@ describe('ImportoTotaleDocumento', () => {
     ]);
     inputBody(input).DatiGenerali.DatiGeneraliDocumento.ImportoTotaleDocumento = '120.00';
     expect(totale(create(input))).toBe('120.00');
+  });
+});
+
+type PagamentoInput = NonNullable<BodyInput['DatiPagamento']>[number];
+
+/** `input` with these DatiPagamento. */
+function withPagamenti(
+  input: CreateInvoiceInput,
+  ...pagamenti: PagamentoInput[]
+): CreateInvoiceInput {
+  inputBody(input).DatiPagamento = pagamenti;
+  return input;
+}
+
+function importiPagamento(fattura: FatturaElettronica): (string | undefined)[] {
+  return (firstBody(fattura).DatiPagamento ?? []).flatMap((pagamento) =>
+    pagamento.DettaglioPagamento.map((dettaglio) => dettaglio.ImportoPagamento),
+  );
+}
+
+// The ritenuta is withheld by the customer "all'atto del pagamento" (art. 25 DPR 600/73), so it
+// lowers what the customer pays, not the total. The Agenzia's examples of a professional subject
+// to ritenuta: 6.1, riepilogo 12852.00 + 2698.92, ImportoRitenuta 2520.00, ImportoPagamento
+// 13030.92 (pagg. 106-109); 6.2, 1664.00 + 349.44, ritenuta 332.80, ImportoPagamento 1680.64
+// (pagg. 110-113) (Suggerimenti per la compilazione della FatturaPA 1.6,
+// https://www.fatturapa.gov.it/export/documenti/Suggerimenti_Compilazione_FatturaPA_1.6.pdf).
+describe('DatiPagamento', () => {
+  test('pays the total less the ritenuta: example 6.1, cassa TC02 not subject to ritenuta', () => {
+    const input = withPagamenti(
+      withRitenute(
+        withCasse([{ PrezzoUnitario: '12600.00', AliquotaIVA: '21.00', Ritenuta: 'SI' }], {
+          TipoCassa: 'TC02',
+          AlCassa: '2.00',
+          ImponibileCassa: '12600.00',
+          AliquotaIVA: '21.00',
+        }),
+        { TipoRitenuta: 'RT01', AliquotaRitenuta: '20.00', CausalePagamento: 'A' },
+      ),
+      { CondizioniPagamento: 'TP02', DettaglioPagamento: [{ ModalitaPagamento: 'MP02' }] },
+    );
+    const fattura = create(input);
+    expect(casse(fattura)[0]?.ImportoContributoCassa).toBe('252.00');
+    expect(servizi(fattura).DatiRiepilogo).toEqual([
+      { AliquotaIVA: '21.00', ImponibileImporto: '12852.00', Imposta: '2698.92' },
+    ]);
+    expect(ritenute(fattura)[0]?.ImportoRitenuta).toBe('2520.00');
+    expect(totale(fattura)).toBe('15550.92');
+    expect(importiPagamento(fattura)).toEqual(['13030.92']);
+  });
+
+  test('pays the total less the ritenuta: example 6.2, rivalsa INPS subject to ritenuta', () => {
+    const input = withPagamenti(
+      withRitenute(
+        withCasse([{ PrezzoUnitario: '1600.00', AliquotaIVA: '21.00', Ritenuta: 'SI' }], {
+          TipoCassa: 'TC22',
+          AlCassa: '4.00',
+          ImponibileCassa: '1600.00',
+          AliquotaIVA: '21.00',
+          Ritenuta: 'SI',
+        }),
+        { TipoRitenuta: 'RT01', AliquotaRitenuta: '20.00', CausalePagamento: 'A' },
+      ),
+      { CondizioniPagamento: 'TP02', DettaglioPagamento: [{ ModalitaPagamento: 'MP02' }] },
+    );
+    const fattura = create(input);
+    expect(servizi(fattura).DatiRiepilogo).toEqual([
+      { AliquotaIVA: '21.00', ImponibileImporto: '1664.00', Imposta: '349.44' },
+    ]);
+    expect(ritenute(fattura)[0]?.ImportoRitenuta).toBe('332.80');
+    expect(totale(fattura)).toBe('2013.44');
+    expect(importiPagamento(fattura)).toEqual(['1680.64']);
+  });
+
+  // Split payment: the suppliers "emettono la fattura secondo quanto previsto dall'art. 21 del
+  // decreto n. 633 del 1972 con l'annotazione 'scissione dei pagamenti'" (DM 23 gennaio 2015,
+  // art. 2, c. 1, GU n. 27 del 3/2/2015,
+  // https://www.gazzettaufficiale.it/eli/id/2015/02/03/15A00695/sg): the VAT is in the invoice,
+  // but the customer "versa" it to the Erario (art. 17-ter, c. 1 DPR 633/72). The Agenzia's
+  // example 6.3 has riepilogo 465.50 + 97.65 with EsigibilitaIVA S and ImportoPagamento 465.50
+  // (Suggerimenti 1.6, p. 117).
+  test('pays the total less the VAT in split payment, which stays in the total', () => {
+    const input = withPagamenti(
+      withLines(
+        { PrezzoUnitario: '465.50', AliquotaIVA: '21.00' },
+        { PrezzoUnitario: '10.00', AliquotaIVA: '0.00', Natura: 'N1' },
+      ),
+      { CondizioniPagamento: 'TP02', DettaglioPagamento: [{ ModalitaPagamento: 'MP05' }] },
+    );
+    inputBody(input).DatiBeniServizi.DatiRiepilogo = [{ AliquotaIVA: 21, EsigibilitaIVA: 'S' }];
+    const fattura = create(input);
+    expect(servizi(fattura).DatiRiepilogo[0]).toEqual({
+      AliquotaIVA: '21.00',
+      ImponibileImporto: '465.50',
+      Imposta: '97.76',
+      EsigibilitaIVA: 'S',
+    });
+    expect(totale(fattura)).toBe('573.26');
+    // 573.26 − 97.76: the N1 line is paid, the split VAT is not
+    expect(importiPagamento(fattura)).toEqual(['475.50']);
+  });
+
+  test('subtracts every ritenuta, also one written by hand, and the split VAT together', () => {
+    const input = withPagamenti(
+      withRitenute(
+        withLines({ PrezzoUnitario: '1000.00', AliquotaIVA: '22.00', Ritenuta: 'SI' }),
+        {
+          TipoRitenuta: 'RT01',
+          ImportoRitenuta: '200.00',
+          AliquotaRitenuta: '20.00',
+          CausalePagamento: 'A',
+        },
+        { TipoRitenuta: 'RT04', ImportoRitenuta: 15.5, AliquotaRitenuta: 2, CausalePagamento: 'A' },
+      ),
+      { CondizioniPagamento: 'TP02', DettaglioPagamento: [{ ModalitaPagamento: 'MP05' }] },
+    );
+    inputBody(input).DatiBeniServizi.DatiRiepilogo = [{ AliquotaIVA: 22, EsigibilitaIVA: 'S' }];
+    // 1000 + 220 − 200 − 15.50 − 220
+    expect(importiPagamento(create(input))).toEqual(['784.50']);
+  });
+
+  test('keeps an ImportoPagamento written by the user', () => {
+    const input = withPagamenti(fpr12Input(), {
+      CondizioniPagamento: 'TP02',
+      DettaglioPagamento: [{ ModalitaPagamento: 'MP05', ImportoPagamento: 100 }],
+    });
+    expect(importiPagamento(create(input))).toEqual(['100.00']);
+  });
+
+  test('adds no DatiPagamento', () => {
+    expect(firstBody(create(fpr12Input())).DatiPagamento).toBeUndefined();
+  });
+
+  // TP01 is "pagamento a rate" (Specifiche tecniche FatturaPA 1.4, p. 59): how the total splits
+  // into instalments is an agreement between the parties, not in the format.
+  test('asks for the amount of each instalment without one, across all DatiPagamento', () => {
+    const input = withPagamenti(
+      fpr12Input(),
+      {
+        CondizioniPagamento: 'TP01',
+        DettaglioPagamento: [
+          { ModalitaPagamento: 'MP05', ImportoPagamento: '61.00' },
+          { ModalitaPagamento: 'MP05' },
+        ],
+      },
+      { CondizioniPagamento: 'TP01', DettaglioPagamento: [{ ModalitaPagamento: 'MP05' }] },
+    );
+    const body = 'FatturaElettronicaBody[0]';
+    expect(problemsOf(() => createInvoice(input))).toEqual([
+      {
+        code: 'create.importoPagamento',
+        path: `${body}.DatiPagamento[0].DettaglioPagamento[1].ImportoPagamento`,
+        message: expect.stringContaining('più DettaglioPagamento'),
+      },
+      {
+        code: 'create.importoPagamento',
+        path: `${body}.DatiPagamento[1].DettaglioPagamento[0].ImportoPagamento`,
+        message: expect.stringContaining('più DettaglioPagamento'),
+      },
+    ]);
   });
 });
 
@@ -724,7 +880,8 @@ describe('CreateInvoiceError', () => {
 describe('the official examples', () => {
   // FPR02 and FPR03 have summaries that don't match their lines (see test/fixtures/official). No
   // example has an ImportoTotaleDocumento, which is optional: the one createInvoice adds is
-  // checked by the tests above, and left out of the comparison.
+  // checked by the tests above, and left out of the comparison. None has a DatiCassaPrevidenziale
+  // or a DatiRitenuta; each body has one DettaglioPagamento, so its ImportoPagamento is computed.
   const examples = officialExamples.filter((name) => !/FPR0[23]$/.test(name));
 
   test.each(examples)('%s: without the computed fields, gives the original back', (name) => {
@@ -735,6 +892,9 @@ describe('the official examples', () => {
       for (const riepilogo of body.DatiBeniServizi.DatiRiepilogo ?? []) {
         delete riepilogo.ImponibileImporto;
         delete riepilogo.Imposta;
+      }
+      for (const pagamento of body.DatiPagamento ?? []) {
+        for (const dettaglio of pagamento.DettaglioPagamento) delete dettaglio.ImportoPagamento;
       }
     }
     const fattura = createInvoice(input);

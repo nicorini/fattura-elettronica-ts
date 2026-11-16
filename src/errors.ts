@@ -89,6 +89,8 @@ export interface CreateInvoiceProblem {
  *   is not RT01 or RT02: `createInvoice` computes only the single RT01 or RT02.
  * - `create.importoTotaleDocumento`: the document has a ScontoMaggiorazione and no
  *   ImportoTotaleDocumento, which `createInvoice` doesn't compute in that case.
+ * - `create.importoPagamento`: a DettaglioPagamento has no ImportoPagamento and is not the only
+ *   one of its body: how the total splits into instalments is the user's.
  *
  * The message is in Italian and names the first problem.
  */

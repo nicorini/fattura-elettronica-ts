@@ -104,6 +104,7 @@ export const createCodes = [
   'create.imponibileCassa',
   'create.importoRitenuta',
   'create.importoTotaleDocumento',
+  'create.importoPagamento',
 ] as const;
 
 /** Errors of the library, with no SdI code. */

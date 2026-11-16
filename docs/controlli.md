@@ -60,6 +60,7 @@ l'eccezione li raccoglie tutti.
 | `create.imponibileCassa`        | un `DatiCassaPrevidenziale` non ha né `ImponibileCassa` né `ImportoContributoCassa`: la base del contributo la indica l'utente, perché il formato non lega righe e cassa                       |
 | `create.importoRitenuta`        | un `DatiRitenuta` senza `ImportoRitenuta` non è l'unico blocco, o non è RT01 né RT02: `createInvoice` calcola solo l'unica ritenuta RT01 o RT02, gli altri importi li indica l'utente          |
 | `create.importoTotaleDocumento` | il documento ha uno `ScontoMaggiorazione` e manca `ImportoTotaleDocumento`: in quel caso `createInvoice` non lo calcola, perché il formato non dice se lo sconto si applica prima o dopo l'IVA |
+| `create.importoPagamento`       | un `DettaglioPagamento` senza `ImportoPagamento` non è l'unico del corpo: `createInvoice` calcola solo l'importo dell'unica rata, la divisione in più rate la indica l'utente                  |
 
 ### Struttura (XSD)
 

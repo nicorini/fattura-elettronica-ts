@@ -4,6 +4,7 @@ import type { FatturaElettronica } from '../generated/model.js';
 import { bodies } from '../sdi/fields.js';
 import { fillImportoContributoCassa } from './cassa.js';
 import { convertNumbers } from './numbers.js';
+import { fillImportoPagamento } from './pagamento.js';
 import { fillPrezzoTotale } from './prezzo-totale.js';
 import { Problems } from './problems.js';
 import { fillDatiRiepilogo } from './riepilogo.js';
@@ -24,7 +25,9 @@ import { fillImportoTotaleDocumento } from './totale.js';
  * of a single RT01 or RT02 `DatiRitenuta` (`AliquotaRitenuta` % of the `PrezzoTotale` of the lines
  * and the `ImportoContributoCassa` of the `DatiCassaPrevidenziale` with `Ritenuta` SI);
  * `ImportoTotaleDocumento` (Σ `ImponibileImporto` + Σ `Imposta` + `Arrotondamento`), only without a
- * `ScontoMaggiorazione` of the document. A `DatiRiepilogo` of the input with the same `AliquotaIVA`
+ * `ScontoMaggiorazione` of the document; `ImportoPagamento` of the only `DettaglioPagamento` of the
+ * body (the total less every `ImportoRitenuta` and the `Imposta` with `EsigibilitaIVA` S, the split
+ * payment), without adding a `DatiPagamento`. A `DatiRiepilogo` of the input with the same `AliquotaIVA`
  * and `Natura` gives its fields (`EsigibilitaIVA`, `RiferimentoNormativo`, the amounts), and the
  * rest is computed.
  *
@@ -43,6 +46,7 @@ export function createInvoice(input: CreateInvoiceInput): FatturaElettronica {
     fillDatiRiepilogo(body);
     fillImportoRitenuta(body, problems);
     fillImportoTotaleDocumento(body, problems);
+    fillImportoPagamento(body, problems);
   }
   if (problems.list.length > 0) throw new CreateInvoiceError(problems.list);
   return fattura;

@@ -24,6 +24,7 @@ export const COMPUTED_FIELDS: { readonly [type: string]: readonly string[] } = {
   DatiCassaPrevidenziale: ['ImportoContributoCassa'],
   DatiRitenuta: ['ImportoRitenuta'],
   DatiGeneraliDocumento: ['ImportoTotaleDocumento'],
+  DettaglioPagamento: ['ImportoPagamento'],
 };
 
 const ROOT_NAME = 'CreateInvoiceInput';
