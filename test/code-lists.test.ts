@@ -65,7 +65,7 @@ test('carries the official descriptions from the XSD annotations', () => {
   ]);
 });
 
-// ADR 0016: where the XSD has no description, the text comes whole from another official source.
+// Where the XSD has no description, the text comes whole from another official source.
 describe('descriptions the XSD lacks', () => {
   const causale = (code: string): string | undefined =>
     codeLists.CausalePagamento.find((entry) => entry.code === code)?.description;
@@ -98,6 +98,7 @@ describe('descriptions the XSD lacks', () => {
   });
 
   // Specifiche tecniche del formato FatturaPA 1.2.2, p. 53: "per il codice ZO indicare il valore Z".
+  // https://www.fatturapa.gov.it/export/documenti/Specifiche_tecniche_del_formato_FatturaPA_V1.2.2.pdf
   test('Z has the text of ZO, which it stood for', () => {
     expect(causale('Z')).toBe(causale('ZO'));
   });

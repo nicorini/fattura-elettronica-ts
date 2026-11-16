@@ -24,7 +24,7 @@ export function emitCodeLists(lists: readonly CodeList[]): string {
   out += jsdoc(doc);
   out += 'export const codeLists: {\n';
   for (const list of lists) {
-    out += jsdoc([`Codes of \`${list.type}\`.${sources(list)}`], 2);
+    out += jsdoc([`Codes of \`${list.type}\`.${sourcesSentence(list)}`], 2);
     out += `  readonly ${key(list.name)}: readonly CodeListEntry<${list.name}>[];\n`;
   }
   out += '} = {\n';
@@ -42,7 +42,7 @@ export function emitCodeLists(lists: readonly CodeList[]): string {
 }
 
 /** The documents other than the XSD that give the descriptions of `list`, as a sentence. */
-function sources(list: CodeList): string {
+function sourcesSentence(list: CodeList): string {
   const names = [
     ...new Set(list.entries.flatMap((entry) => (entry.source === undefined ? [] : entry.source))),
   ];

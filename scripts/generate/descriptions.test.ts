@@ -72,6 +72,19 @@ describe('addDescriptions', () => {
     ).toThrow('TipoDocumento TD01 already has a description in the XSD');
   });
 
+  test('fails on a code described twice in the file', () => {
+    const entry = {
+      list: 'CausalePagamento',
+      code: 'A',
+      description: 'x',
+      source: 'cu',
+      pages: '82',
+    };
+    expect(() => listAfter('CausalePagamento', [entry, entry])).toThrow(
+      'CausalePagamento A is described twice in the file',
+    );
+  });
+
   test('fails on a source not declared in the file', () => {
     expect(() =>
       listAfter('CausalePagamento', [

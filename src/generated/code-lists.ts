@@ -201,7 +201,7 @@ export const codeLists: {
         'canoni corrisposti dal 1° gennaio 2005 al 26 luglio 2005 da società o enti residenti ovvero da stabili organizzazioni di società estere di cui all’art. 26-quater, comma 1, lett. a) e b) del D.P.R. n. 600 del 29 settembre 1973, a società o stabili organizzazioni di società, situate in altro stato membro dell’Unione Europea in presenza dei requisiti di cui al citato art. 26-quater, del D.P.R. n. 600 del 29 settembre 1973, per i quali è stato effettuato, nell’anno 2006, il rimborso della ritenuta ai sensi dell’art. 4 del D.Lgs. 30 maggio 2005 n. 143',
     },
     // Istruzioni CU 2026, agg. 24/02/2026, p. 83. Text of ZO: the Specifiche tecniche del formato
-    // FatturaPA 1.2.2 (p. 53) say «per il codice ZO indicare il valore Z».
+    // FatturaPA 1.2.2 (p. 53) and the Allegato A 1.5 say «per il codice ZO indicare il valore Z».
     { code: 'Z', description: 'titolo diverso dai precedenti.' },
     // Istruzioni CU 2026, agg. 24/02/2026, p. 82
     {

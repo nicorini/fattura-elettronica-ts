@@ -17,19 +17,15 @@ const schema = names(readSchema(readFileSync(new URL(`../../${XSD}`, import.meta
 const descriptions: DescriptionsFile = JSON.parse(
   readFileSync(new URL(`../../${DESCRIPTIONS}`, import.meta.url), 'utf8'),
 );
-const header = (from: string): string =>
-  `// Generated from ${from} by scripts/generate.\n// Do not edit: change the generator and run \`pnpm generate\`.\n\n`;
+const header = (from: readonly string[]): string =>
+  `// Generated from ${from.join('\n// and ')} by scripts/generate.\n// Do not edit: change the generator and run \`pnpm generate\`.\n\n`;
 
 mkdirSync(OUT, { recursive: true });
 for (const [file, from, content] of [
-  ['model.ts', XSD, emitModel(schema)],
-  [
-    'code-lists.ts',
-    `${XSD}\n// and ${DESCRIPTIONS}`,
-    emitCodeLists(addDescriptions(schema, descriptions)),
-  ],
-  ['schema.ts', XSD, emitSchema(schema)],
-  ['simple-types.ts', XSD, emitSimpleTypes(schema)],
+  ['model.ts', [XSD], emitModel(schema)],
+  ['code-lists.ts', [XSD, DESCRIPTIONS], emitCodeLists(addDescriptions(schema, descriptions))],
+  ['schema.ts', [XSD], emitSchema(schema)],
+  ['simple-types.ts', [XSD], emitSimpleTypes(schema)],
 ] as const) {
   writeFileSync(new URL(file, OUT), header(from) + content.replace(/^\n+/, ''));
 }
