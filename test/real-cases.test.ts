@@ -524,7 +524,11 @@ describe('codes other libraries refused', () => {
   // (XI for Northern Ireland), #385 (TD28 from San Marino):
   // https://github.com/FatturaElettronica/FatturaElettronica.NET/issues?q=265+370+374+314+385.
   // "Nei casi di TD17 e TD19 è ammessa l'indicazione del valore 'OO' nell'elemento 1.2.1.1.1
-  // <IdPaese>" (Allegato A 1.9.1, p. 119). TD29 is new in XSD 1.2.3.
+  // <IdPaese>" (Allegato A 1.9.1, p. 119). TD29 is new in XSD 1.2.3. #385 asked TD28 to want SM,
+  // as the Allegato A 1.7.1 said: "nel caso del TD28, l'elemento 1.2.1.1.1 <IdPaese> deve essere
+  // valorizzato con il valore SM" (p. 121,
+  // https://www.agenziaentrate.gov.it/portale/documents/20143/451259/Allegato+A+-+Specifiche+tecniche+vers+1.7.1.pdf/5c3de81a-7ad5-34a7-54b0-735b1456972c).
+  // The 1.8 dropped it, and TD28 from other countries is valid (00473 tests).
   test.each([
     ['TD17', 'OO'],
     ['TD19', 'OO'],

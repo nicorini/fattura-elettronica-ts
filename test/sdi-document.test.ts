@@ -509,6 +509,18 @@ describe('00473: the country of the supplier must fit the type', () => {
     expect(problemsOf(selfInvoice('TD28', 'SM'))).toEqual([]);
   });
 
+  test('TD28 from a French supplier is valid', () => {
+    // TD28 also for the invoice "con addebito dell'imposta in rivalsa dal fornitore non stabilito,
+    // ancorché identificato in Italia" (Allegato A 1.9.1, p. 110), with "<CedentePrestatore>: dati
+    // identificativi del C/P estero" (§3.2.4.2, p. 111,
+    // https://www.agenziaentrate.gov.it/portale/documents/d/guest/allegato-a-specifiche-tecniche-vers-1-9-1;
+    // the same in the Guida alla compilazione 1.9, pp. 30-31,
+    // https://www.agenziaentrate.gov.it/portale/documents/20143/451259/Guida_compilazione-FE-Esterometro-V1.9_2024-03-05.pdf/67fe4c2d-1174-e8de-f1ee-cea77b7f5203).
+    // 00473 checks only IT (Elenco controlli SdI 2.0, p. 42,
+    // https://www.fatturapa.gov.it/export/documenti/fatturapa/v1.4/Elenco-Controlli-versione-2.0.pdf).
+    expect(problemsOf(selfInvoice('TD28', 'FR'))).toEqual([]);
+  });
+
   test('TD17 from Greece (EL) and TD18 from Northern Ireland (XI) are valid', () => {
     // FatturaElettronica.NET#314, #409: EL and XI are the VAT prefixes, not ISO codes.
     expect(problemsOf(selfInvoice('TD17', 'EL'))).toEqual([]);
