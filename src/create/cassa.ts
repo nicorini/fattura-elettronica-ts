@@ -1,6 +1,6 @@
 // Step 3 of createInvoice: ImportoContributoCassa of each DatiCassaPrevidenziale without one.
-import { type Body, casse, toBig } from '../sdi/fields.js';
-import { round2 } from '../sdi/vat/values.js';
+import { importoContributoCassa } from '../cassa.js';
+import { type Body, casse } from '../sdi/fields.js';
 import type { Problems } from './problems.js';
 
 /**
@@ -19,9 +19,7 @@ export function fillImportoContributoCassa(body: Body, problems: Problems): void
       );
       continue;
     }
-    const imponibile = toBig(cassa.ImponibileCassa);
-    const aliquota = toBig(cassa.AlCassa);
-    if (imponibile === undefined || aliquota === undefined) continue;
-    cassa.ImportoContributoCassa = round2(imponibile.times(aliquota).times('0.01')).toFixed(2);
+    const importo = importoContributoCassa(cassa);
+    if (importo !== undefined) cassa.ImportoContributoCassa = importo.toFixed(2);
   }
 }

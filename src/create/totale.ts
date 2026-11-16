@@ -1,7 +1,6 @@
 // Step 6 of createInvoice: ImportoTotaleDocumento.
-import Big from 'big.js';
-import { type Body, list, riepiloghi, toBig } from '../sdi/fields.js';
-import { round2 } from '../sdi/vat/values.js';
+import type { Body } from '../sdi/fields.js';
+import { hasScontoDocumento, importoTotaleDocumento } from '../totale.js';
 import type { Problems } from './problems.js';
 
 /**
@@ -13,7 +12,7 @@ import type { Problems } from './problems.js';
 export function fillImportoTotaleDocumento(body: Body, problems: Problems): void {
   const documento = body.datiDocumento;
   if (documento === undefined || documento.ImportoTotaleDocumento !== undefined) return;
-  if (list(documento.ScontoMaggiorazione).length > 0) {
+  if (hasScontoDocumento(body)) {
     problems.add(
       'create.importoTotaleDocumento',
       `${body.documento}.ImportoTotaleDocumento`,
@@ -21,15 +20,6 @@ export function fillImportoTotaleDocumento(body: Body, problems: Problems): void
     );
     return;
   }
-  let total: Big | undefined =
-    documento.Arrotondamento === undefined ? new Big(0) : toBig(documento.Arrotondamento);
-  for (const { block: riepilogo } of riepiloghi(body)) {
-    const imponibile = toBig(riepilogo.ImponibileImporto);
-    const imposta = toBig(riepilogo.Imposta);
-    total =
-      imponibile === undefined || imposta === undefined
-        ? undefined
-        : total?.plus(imponibile).plus(imposta);
-  }
-  if (total !== undefined) documento.ImportoTotaleDocumento = round2(total).toFixed(2);
+  const total = importoTotaleDocumento(body);
+  if (total !== undefined) documento.ImportoTotaleDocumento = total.toFixed(2);
 }

@@ -1,7 +1,6 @@
 // Step 5 of createInvoice: ImportoRitenuta of the only RT01 or RT02 DatiRitenuta.
-import Big from 'big.js';
-import { type Body, blocks, casse, lines, toBig } from '../sdi/fields.js';
-import { round2 } from '../sdi/vat/values.js';
+import { datiRitenuta, importoRitenuta } from '../ritenuta.js';
+import type { Body } from '../sdi/fields.js';
 import type { Problems } from './problems.js';
 
 /**
@@ -11,7 +10,7 @@ import type { Problems } from './problems.js';
  * invoice doesn't hold, and with more blocks the format doesn't say which one a flag belongs to.
  */
 export function fillImportoRitenuta(body: Body, problems: Problems): void {
-  const ritenute = blocks(body.datiDocumento?.DatiRitenuta, `${body.documento}.DatiRitenuta`);
+  const ritenute = datiRitenuta(body);
   for (const { block: ritenuta, path } of ritenute) {
     if (ritenuta.ImportoRitenuta !== undefined) continue;
     if (ritenute.length > 1) {
@@ -27,27 +26,8 @@ export function fillImportoRitenuta(body: Body, problems: Problems): void {
         `Manca ImportoRitenuta: createInvoice calcola solo le ritenute RT01 e RT02, per ${String(ritenuta.TipoRitenuta)} indica tu l'importo.`,
       );
     } else {
-      const importo = computed(body, ritenuta.AliquotaRitenuta);
-      if (importo !== undefined) ritenuta.ImportoRitenuta = importo;
+      const importo = importoRitenuta(body, ritenuta);
+      if (importo !== undefined) ritenuta.ImportoRitenuta = importo.toFixed(2);
     }
   }
-}
-
-/** AliquotaRitenuta % of the lines and casse with Ritenuta SI, to the cent. */
-function computed(body: Body, aliquotaRitenuta: unknown): string | undefined {
-  const aliquota = toBig(aliquotaRitenuta);
-  let base: Big | undefined = new Big(0);
-  for (const { block: linea } of lines(body)) {
-    if (linea.Ritenuta === 'SI') base = add(base, linea.PrezzoTotale);
-  }
-  for (const { block: cassa } of casse(body)) {
-    if (cassa.Ritenuta === 'SI') base = add(base, cassa.ImportoContributoCassa);
-  }
-  if (base === undefined || aliquota === undefined) return undefined;
-  return round2(base.times(aliquota).times('0.01')).toFixed(2);
-}
-
-function add(sum: Big | undefined, value: unknown): Big | undefined {
-  const amount = toBig(value);
-  return amount === undefined ? undefined : sum?.plus(amount);
 }
