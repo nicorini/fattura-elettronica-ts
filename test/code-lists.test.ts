@@ -72,11 +72,11 @@ describe('descriptions the XSD lacks', () => {
 
   // Istruzioni CU 2026, agg. 24/02/2026, pp. 82-83:
   // https://www.agenziaentrate.gov.it/portale/documents/20143/9602395/CU_istr_2026_agg+24+02.pdf/4184818b-05a3-acce-5956-70811c7d2233
-  test('CausalePagamento has the text of the CU instructions, without the final ";"', () => {
+  test('CausalePagamento has the text of the CU instructions, without the final ";" or "."', () => {
     expect(causale('A')).toBe(
       'prestazioni di lavoro autonomo rientranti nell’esercizio di arte o professione abituale',
     );
-    expect(causale('ZO')).toBe('titolo diverso dai precedenti.');
+    expect(causale('ZO')).toBe('titolo diverso dai precedenti');
     expect(codeLists.CausalePagamento.filter((entry) => entry.description === undefined)).toEqual(
       [],
     );

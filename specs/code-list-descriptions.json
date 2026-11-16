@@ -180,7 +180,7 @@
     {
       "list": "CausalePagamento",
       "code": "Z",
-      "description": "titolo diverso dai precedenti.",
+      "description": "titolo diverso dai precedenti",
       "source": "cu",
       "pages": "83",
       "note": "Text of ZO: the Specifiche tecniche del formato FatturaPA 1.2.2 (p. 53) and the Allegato A 1.5 say «per il codice ZO indicare il valore Z»."
@@ -223,7 +223,7 @@
     {
       "list": "CausalePagamento",
       "code": "ZO",
-      "description": "titolo diverso dai precedenti.",
+      "description": "titolo diverso dai precedenti",
       "source": "cu",
       "pages": "83"
     },

@@ -202,7 +202,7 @@ export const codeLists: {
     },
     // Istruzioni CU 2026, agg. 24/02/2026, p. 83. Text of ZO: the Specifiche tecniche del formato
     // FatturaPA 1.2.2 (p. 53) and the Allegato A 1.5 say «per il codice ZO indicare il valore Z».
-    { code: 'Z', description: 'titolo diverso dai precedenti.' },
+    { code: 'Z', description: 'titolo diverso dai precedenti' },
     // Istruzioni CU 2026, agg. 24/02/2026, p. 82
     {
       code: 'L1',
@@ -234,7 +234,7 @@ export const codeLists: {
         'redditi derivanti da attività commerciali non esercitate abitualmente (ad esempio, provvigioni corrisposte per prestazioni occasionali ad agente o rappresentante di commercio, mediatore, procacciatore d’affari)',
     },
     // Istruzioni CU 2026, agg. 24/02/2026, p. 83
-    { code: 'ZO', description: 'titolo diverso dai precedenti.' },
+    { code: 'ZO', description: 'titolo diverso dai precedenti' },
   ],
   TipoScontoMaggiorazione: [
     { code: 'SC', description: 'SC = Sconto' },
