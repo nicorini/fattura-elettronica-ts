@@ -9,6 +9,8 @@ export interface DescriptionSource {
   readonly url: string;
   readonly sha256: string;
   readonly edition: string;
+  /** A new edition comes out every year: the spec watcher checks that `edition` follows it. */
+  readonly yearly?: boolean;
 }
 
 /** The description of one code, with where it comes from. */

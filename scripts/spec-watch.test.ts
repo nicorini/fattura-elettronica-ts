@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { checkSources, renderIssue, type Source } from './spec-watch.ts';
+import { checkEditions, checkSources, renderIssue, type Source } from './spec-watch.ts';
 
 // A fake network: each URL answers with fixed text.
 function fakeFetch(responses: Record<string, string>) {
@@ -80,6 +80,27 @@ describe('checkSources', () => {
   });
 });
 
+describe('checkEditions', () => {
+  const sources = {
+    cu: { name: 'Istruzioni CU 2026', edition: '2026', yearly: true },
+    'cu-2024': { name: 'Istruzioni CU 2024', edition: '2024' },
+  };
+
+  it('reports, from 1 February, a yearly source whose edition is of a past year', () => {
+    expect(checkEditions(sources, new Date('2027-02-01T00:00:00Z'))).toEqual([
+      { kind: 'edition', name: 'Istruzioni CU 2026', edition: '2026', year: 2027 },
+    ]);
+  });
+
+  it('waits until 1 February, when the new edition is out', () => {
+    expect(checkEditions(sources, new Date('2027-01-31T23:59:59Z'))).toEqual([]);
+  });
+
+  it('reports nothing when the yearly edition is of the current year', () => {
+    expect(checkEditions(sources, new Date('2026-11-16T00:00:00Z'))).toEqual([]);
+  });
+});
+
 describe('renderIssue', () => {
   it('lists, in Italian, what changed in each source and how to save the new fingerprints', () => {
     const body = renderIssue([
@@ -130,6 +151,25 @@ File: https://example.it/a.pdf
 
 1. Leggere i documenti cambiati e decidere se toccano la libreria (XSD, controlli, codici).
 2. Aggiornare le impronte con \`pnpm specs:watch --update\` e committare \`specs/sources.json\`, anche se la libreria non cambia.
+`;
+    expect(body).toBe(expected);
+  });
+
+  it('says the descriptions are on an old edition and how to move them to the new one', () => {
+    const body = renderIssue([
+      { kind: 'edition', name: 'Istruzioni CU 2026', edition: '2026', year: 2027 },
+    ]);
+
+    const expected = `Il sorvegliante delle specifiche ha trovato qualcosa da controllare.
+
+## Istruzioni CU 2026
+
+Le descrizioni dei codici in \`specs/code-list-descriptions.json\` vengono dall'edizione 2026, ma dal 1° febbraio deve essere uscita l'edizione 2027. Il suo indirizzo cambia ogni anno, quindi il sorvegliante non può scaricarla da solo.
+
+1. Cercare l'edizione 2027 sul sito dell'Agenzia delle Entrate.
+2. Confrontare i testi delle voci che citano questa fonte con quelli della nuova edizione, e i codici che toglie o aggiunge con quelli dell'XSD.
+3. Aggiornare in \`specs/code-list-descriptions.json\` nome, URL, SHA-256, edizione, pagine e testi, poi \`pnpm generate\`. Un testo cambiato è una versione \`minor\` che nomina l'edizione nel changelog.
+4. Aggiornare in \`specs/sources.json\` le pagine dell'anno della fonte.
 `;
     expect(body).toBe(expected);
   });

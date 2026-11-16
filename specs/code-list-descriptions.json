@@ -4,7 +4,8 @@
       "name": "Istruzioni CU 2026, agg. 24/02/2026",
       "url": "https://www.agenziaentrate.gov.it/portale/documents/20143/9602395/CU_istr_2026_agg+24+02.pdf/4184818b-05a3-acce-5956-70811c7d2233?t=1771947585334",
       "sha256": "a6ccf7cf53edcbd0d084c2266868649f8d17c348644401b540efd5e3fc95e841",
-      "edition": "2026"
+      "edition": "2026",
+      "yearly": true
     },
     "cu-2024": {
       "name": "Istruzioni CU 2024",
