@@ -9,10 +9,12 @@ import { rolldown } from 'rolldown';
  */
 
 /**
- * Measured weight plus 10%: 26 835 bytes for the main entry of 0.1. Raise it on purpose, writing
- * down why, when the entry grows.
+ * Measured weight plus 10%. Raise it on purpose, writing down why, when the entry grows.
+ *
+ * - 0.1: 26 835 bytes.
+ * - Descriptions of `CausalePagamento` and `BolloVirtuale`, the whole official text: 29 503 bytes.
  */
-const LIMIT_BYTES = 29_519;
+const LIMIT_BYTES = 32_453;
 
 const bundle = await rolldown({ input: 'dist/index.js', platform: 'neutral', logLevel: 'silent' });
 const { output } = await bundle.generate({ format: 'esm', minify: true });
