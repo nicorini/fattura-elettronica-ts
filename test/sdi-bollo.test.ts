@@ -134,9 +134,9 @@ describe('warn.bollo', () => {
     expect(bolloWarnings(invoiceWith([{ prezzo: '100.00', natura }]))).toEqual([WARNING]);
   });
 
-  // N1 and N3.4 may owe the stamp by law (risposte AdE 328/2023 and 45/2024), but the criterion
-  // of the Agenzia leaves them out: so does the warning, on purpose. N3.1 and N3.2 are exempt by
-  // law (DPR 642/72, Tabella B, art. 15; DL 331/93, art. 66, c. 5).
+  // N1, N3.1, N3.2 and N3.4 are not among the natures of the criterion quoted above (Specifiche
+  // tecniche del bollo 1.3, §3, p. 4): the warning leaves them out on purpose, as the Agenzia
+  // does, whatever the stamp each one owes by law.
   test.each(['N1', 'N3.1', 'N3.2', 'N3.4'] as const)('a line %s does not count', (natura) => {
     expect(bolloWarnings(invoiceWith([{ prezzo: '100.00', natura }]))).toEqual([]);
   });
