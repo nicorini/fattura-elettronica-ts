@@ -9,7 +9,7 @@ export const rule00411and00415: SdiRule = (fattura) => {
   const problems: Problem[] = [];
   for (const body of bodies(fattura)) {
     if (list(body.datiDocumento?.DatiRitenuta).length > 0) continue;
-    const ritenutaPath = `${body.documento}.DatiRitenuta`;
+    const ritenutaPath = `${body.documentoPath}.DatiRitenuta`;
     if (lines(body).some(({ block }) => block.Ritenuta === 'SI')) {
       problems.push(
         sdiError(

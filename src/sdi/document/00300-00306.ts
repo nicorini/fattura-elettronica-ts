@@ -72,7 +72,7 @@ export const rule00300to00306: SdiRule = (fattura) => {
       warning('warn.codiceFiscale'),
     ],
   ] as const;
-  for (const { body, path } of bodies(fattura)) {
+  for (const { block: body, path } of bodies(fattura)) {
     const vettore = block(block(block(body.DatiGenerali)?.DatiTrasporto)?.DatiAnagraficiVettore);
     const where = `${path}.DatiGenerali.DatiTrasporto.DatiAnagraficiVettore`;
     problems.push(...checkPartitaIva(vettore?.IdFiscaleIVA, where, warning('warn.partitaIva')));

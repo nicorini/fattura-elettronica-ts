@@ -19,8 +19,8 @@ Interscambio (SdI).
   il solo file, ognuno con il codice ufficiale (`00423`…), il campo, un messaggio in italiano e il
   documento dell'Agenzia delle Entrate da cui viene. Mai più severi del SdI: nel dubbio, un avviso.
 - **JavaScript standard.** Solo ESM, tipi inclusi, due dipendenze in JavaScript puro e nessuna
-  nativa, meno di 30 kB minificata e compressa. Gira su Node ≥ 22, Bun e Deno (vedi
-  [Runtime](#runtime)).
+  nativa, meno di 30 kB minificata e compressa. Gira su Node ≥ 22, Bun, Deno, nel browser e su
+  workerd (vedi [Runtime](#runtime)).
 
 **Stato: 0.x.** La 0.1 è la prima versione pubblicata. Fino alla 1.0 l'API può cambiare da una
 minor all'altra (da 0.1 a 0.2), mai in una patch: con il `^0.1.0` che npm scrive di default ricevi
@@ -28,8 +28,8 @@ solo le patch. Ogni cambiamento è nel [changelog](CHANGELOG.md).
 
 _English: a TypeScript library to read, write and validate Italian e-invoices (FatturaPA). Typed
 model generated 1:1 from the official XSD, amounts as strings, validation with the official codes
-of the exchange system (SdI). ESM only, no native dependencies; tested on Node ≥ 22, Bun and Deno.
-The documentation is in Italian._
+of the exchange system (SdI). ESM only, no native dependencies; tested on Node ≥ 22, Bun, Deno,
+headless Chromium and workerd. The documentation is in Italian._
 
 ## Installazione
 
@@ -180,9 +180,101 @@ const xml = build(fattura);
 console.log(xml);
 ```
 
-`build` scrive i campi nell'ordine dello schema, qualunque sia l'ordine delle chiavi. Riepiloghi
-IVA e totali, per ora, li calcola il gestionale: `validate` controlla che tornino, con le
-tolleranze del SdI.
+`build` scrive i campi nell'ordine dello schema, qualunque sia l'ordine delle chiavi. Qui gli
+importi derivati (riepilogo IVA, totale) sono scritti a mano: `validate` controlla che tornino,
+con le tolleranze del SdI. Per farli calcolare, vedi l'esempio seguente.
+
+### Creare una fattura dalle righe
+
+`createInvoice` completa la fattura dalle righe: calcola gli importi che dipendono da loro e che
+hai lasciato vuoti, e restituisce l'oggetto del modello, pronto per `build`. Qui: le righe, una
+cassa previdenziale, una ritenuta e una rata di pagamento. Gli importi possono essere anche
+`number` (`50` diventa `"50.00"`).
+
+```ts
+import { build, createInvoice, validate } from 'fattura-elettronica-ts';
+
+const fattura = createInvoice({
+  versione: 'FPR12',
+  FatturaElettronicaHeader: {
+    DatiTrasmissione: {
+      IdTrasmittente: { IdPaese: 'IT', IdCodice: '01234567897' },
+      ProgressivoInvio: '00001',
+      FormatoTrasmissione: 'FPR12',
+      CodiceDestinatario: '0000000',
+    },
+    CedentePrestatore: {
+      DatiAnagrafici: {
+        IdFiscaleIVA: { IdPaese: 'IT', IdCodice: '01234567897' },
+        Anagrafica: { Denominazione: 'ALPHA SRL' },
+        RegimeFiscale: 'RF01',
+      },
+      Sede: {
+        Indirizzo: 'VIA ROMA 1',
+        CAP: '00100',
+        Comune: 'ROMA',
+        Provincia: 'RM',
+        Nazione: 'IT',
+      },
+    },
+    CessionarioCommittente: {
+      DatiAnagrafici: {
+        CodiceFiscale: 'RSSMRA80A01H501U',
+        Anagrafica: { Nome: 'MARIO', Cognome: 'ROSSI' },
+      },
+      Sede: { Indirizzo: 'VIA MILANO 2', CAP: '20100', Comune: 'MILANO', Nazione: 'IT' },
+    },
+  },
+  FatturaElettronicaBody: [
+    {
+      DatiGenerali: {
+        DatiGeneraliDocumento: {
+          TipoDocumento: 'TD01',
+          Divisa: 'EUR',
+          Data: '2025-01-15',
+          Numero: '1',
+          // La ritenuta del 20%: sulle righe con Ritenuta SI. L'importo lo calcola createInvoice.
+          DatiRitenuta: [{ TipoRitenuta: 'RT01', AliquotaRitenuta: 20, CausalePagamento: 'A' }],
+          // La cassa: il contributo è il 4% di ImponibileCassa, e lo calcola createInvoice.
+          DatiCassaPrevidenziale: [
+            { TipoCassa: 'TC04', AlCassa: 4, ImponibileCassa: 1000, AliquotaIVA: 22 },
+          ],
+        },
+      },
+      DatiBeniServizi: {
+        DettaglioLinee: [
+          {
+            NumeroLinea: '1',
+            Descrizione: 'Consulenza',
+            Quantita: 10,
+            PrezzoUnitario: 100,
+            AliquotaIVA: 22,
+            Ritenuta: 'SI',
+          },
+          { NumeroLinea: '2', Descrizione: 'Spese', PrezzoUnitario: 50, AliquotaIVA: 22 },
+        ],
+      },
+      DatiPagamento: [
+        {
+          CondizioniPagamento: 'TP02',
+          // Una sola rata: l'importo è il totale meno la ritenuta.
+          DettaglioPagamento: [{ ModalitaPagamento: 'MP05', DataScadenzaPagamento: '2025-02-15' }],
+        },
+      ],
+    },
+  ],
+});
+
+const body = fattura.FatturaElettronicaBody[0];
+console.log(body?.DatiBeniServizi.DatiRiepilogo);
+console.log(body?.DatiPagamento?.[0]?.DettaglioPagamento[0]?.ImportoPagamento);
+
+console.log(validate(fattura).valid ? build(fattura) : 'Fattura da correggere');
+```
+
+Se un dato che serve a un calcolo manca (per esempio l'`ImponibileCassa`), `createInvoice` lancia
+`CreateInvoiceError` con l'elenco dei problemi. La struttura non la controlla: ci pensano `build` e
+`validate`.
 
 ### Mostrare i problemi all'utente
 
@@ -243,16 +335,20 @@ console.log(options);
 - **`codeLists`** e **`decimal`**: elenchi dei codici per le interfacce, conversione sicura da
   `number` a importo.
 
-In programma: il calcolo di riepiloghi IVA e totali a partire dalle righe (con ritenuta, cassa
-previdenziale e bollo), poi l'estrazione dell'XML dalle buste firmate `.p7m` e una riga di
-comando.
+- **`createInvoice`**: dalle righe alla fattura completa. Calcola `PrezzoTotale`, contributo della
+  cassa previdenziale, riepiloghi IVA, ritenuta, totale del documento e importo della rata. Il
+  livello 2 fa i conti, non decide il fisco: aliquota, natura, tipo di ritenuta e cassa le scegli
+  tu. Ogni campo calcolato si può scrivere a mano, e `createInvoice` lo lascia com'è. Sul bollo
+  avvisa soltanto: `validate` segnala (`warn.bollo`) quando manca, non lo aggiunge.
+
+In programma: l'estrazione dell'XML dalle buste firmate `.p7m` e una riga di comando.
 
 ## Cosa non fa
 
 - Non invia le fatture al SdI e non riceve le notifiche: non è un canale di trasmissione.
 - Non firma i file e non verifica la validità legale della firma.
 - Non legge ancora i `.p7m`: per ora l'XML va estratto prima, con un altro strumento.
-- Non calcola ancora riepiloghi e totali (vedi sopra).
+- Non decide le regole fiscali: sceglie tu aliquota, natura, ritenuta, cassa e bollo.
 - Non fa la conservazione sostitutiva, né il PDF di cortesia.
 - Non gestisce anagrafiche, numerazione o database: sono compiti del gestionale.
 - Non tratta la fattura semplificata (FSM10).
@@ -262,15 +358,17 @@ comando.
 
 ## Runtime
 
-| Runtime               | Come è provato in CI                                                      |
-| --------------------- | ------------------------------------------------------------------------- |
-| Node 22, 24 e 26      | tutti i test, a ogni commit                                               |
-| Bun e Deno            | il pacchetto, installato come da npm, legge e valida un esempio ufficiale |
-| Browser, runtime edge | non ancora provati                                                        |
+| Runtime                     | Come è provato in CI                                                      |
+| --------------------------- | ------------------------------------------------------------------------- |
+| Node 22, 24 e 26            | tutti i test, a ogni commit                                               |
+| Bun e Deno                  | il pacchetto, installato come da npm, legge e valida un esempio ufficiale |
+| Browser (Chromium headless) | come Bun e Deno, con il pacchetto in un bundle e l'esempio scaricato      |
+| Edge (workerd)              | come Bun e Deno, con il pacchetto in un bundle e l'esempio incorporato    |
 
-Il codice della libreria non usa API di Node né del browser (lo verifica il compilatore), quindi è
-pensato per funzionare anche nei browser e nei runtime edge, ma oggi nessun test lo prova. Se lo
-usi lì, una segnalazione, di successo o di problema, aiuta.
+Il codice della libreria non usa API di Node né del browser (lo verifica il compilatore), quindi
+funziona senza file system: nel browser e su workerd, il runtime di Cloudflare Workers, riceve i
+byte della fattura. Sugli altri browser e runtime edge non è provato: se la usi lì, una
+segnalazione, di successo o di problema, aiuta.
 
 ## Specifiche supportate
 

@@ -3,6 +3,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { expect, expectTypeOf, test } from 'vitest';
 import {
+  createCodes,
   libraryErrorCodes,
   libraryWarningCodes,
   sdiErrorCodes,
@@ -10,12 +11,19 @@ import {
   structureCodes,
   xmlCodes,
 } from '../src/codes.js';
-import type { ParseErrorCode, Problem, ProblemCode, SdiCode } from '../src/index.js';
+import type {
+  CreateInvoiceErrorCode,
+  ParseErrorCode,
+  Problem,
+  ProblemCode,
+  SdiCode,
+} from '../src/index.js';
 
 const read = (path: string): string => readFileSync(new URL(path, import.meta.url), 'utf8');
 
 const codes = [
   ...xmlCodes,
+  ...createCodes,
   ...structureCodes,
   ...sdiErrorCodes.map((code) => `sdi.${code}` as const),
   ...sdiWarningCodes.map((code) => `sdi.${code}.warn` as const),
@@ -25,6 +33,10 @@ const codes = [
 
 test('the codes of ParseError are the xml codes', () => {
   expectTypeOf<(typeof xmlCodes)[number]>().toEqualTypeOf<ParseErrorCode>();
+});
+
+test('the codes of CreateInvoiceError are the create codes', () => {
+  expectTypeOf<(typeof createCodes)[number]>().toEqualTypeOf<CreateInvoiceErrorCode>();
 });
 
 test('ProblemCode is exactly the listed codes', () => {
@@ -47,7 +59,7 @@ test('SdiCode is 00200 and the codes of the SdI errors', () => {
 test('the document of the checks lists every code, and no other', () => {
   // Every code written in backticks, wherever it is in the document.
   const documented = read('../docs/controlli.md').match(
-    /(?<=`)(?:(?:xml|xsd|input|warn|option|internal)\.[A-Za-z]+|sdi\.\d{5}(?:\.warn)?)(?=`)/g,
+    /(?<=`)(?:(?:xml|xsd|input|warn|option|internal|create)\.[A-Za-z]+|sdi\.\d{5}(?:\.warn)?)(?=`)/g,
   );
   expect(new Set(documented)).toEqual(new Set(codes));
 });
@@ -61,6 +73,7 @@ test('every listed code is used by the source', () => {
     .join('\n');
   const unused = [
     ...xmlCodes,
+    ...createCodes,
     ...structureCodes,
     ...sdiErrorCodes,
     ...sdiWarningCodes,

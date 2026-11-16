@@ -2,6 +2,7 @@
 // fresh copy and breaks exactly what it is about.
 import type {
   CedentePrestatore,
+  CreateInvoiceInput,
   DettaglioLinee,
   FatturaElettronica,
   FatturaElettronicaBody,
@@ -132,4 +133,18 @@ export function firstLine(fattura: FatturaElettronica): DettaglioLinee {
   const result = firstBody(fattura).DatiBeniServizi.DettaglioLinee[0];
   if (result === undefined) throw new Error('The invoice has no line');
   return result;
+}
+
+/**
+ * The input of createInvoice that gives {@link fpr12}: the same invoice without the fields that
+ * createInvoice computes.
+ */
+export function fpr12Input(): CreateInvoiceInput {
+  const fattura: CreateInvoiceInput = fpr12();
+  const body = fattura.FatturaElettronicaBody[0];
+  if (body === undefined) throw new Error('The invoice has no body');
+  delete body.DatiGenerali.DatiGeneraliDocumento.ImportoTotaleDocumento;
+  delete body.DatiBeniServizi.DatiRiepilogo;
+  for (const linea of body.DatiBeniServizi.DettaglioLinee) delete linea.PrezzoTotale;
+  return fattura;
 }

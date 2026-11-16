@@ -6,7 +6,10 @@ minimumReleaseAge: 1440
 trustPolicy: no-downgrade
 
 # What dependencies may do beyond installing (scripts, agent skills).
-# The tsdown skill is denied: it points agents to remote instructions.
+# The tsdown skill is denied: it points agents to remote instructions. The workerd script only
+# checks the binary, which comes already as an optional dependency.
 permissions:
   tsdown:
     skills: false
+  workerd:
+    build: false

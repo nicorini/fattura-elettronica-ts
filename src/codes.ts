@@ -3,7 +3,7 @@
 // the same codes, and a test compares the two. The library uses the lists only as types: they add
 // nothing to the bundle.
 
-import type { ParseErrorCode } from './errors.js';
+import type { CreateInvoiceErrorCode, ParseErrorCode } from './errors.js';
 
 /** The input is not a FatturaPA at all: the codes of `ParseError` (`ParseErrorCode`). */
 export const xmlCodes = [
@@ -94,6 +94,21 @@ export const libraryWarningCodes = [
   'warn.codiceFiscale',
   'warn.idTrasmittenteMinuscolo',
   'warn.pecDestinatario',
+  'warn.bollo',
+  'warn.importoContributoCassa',
+  'warn.importoRitenuta',
+  'warn.importoTotaleDocumento',
+  'warn.importoPagamento',
+] as const;
+
+/** Problems of the input of createInvoice: the codes of `CreateInvoiceError`. */
+export const createCodes = [
+  'create.number',
+  'create.scontoAmbiguo',
+  'create.imponibileCassa',
+  'create.importoRitenuta',
+  'create.importoTotaleDocumento',
+  'create.importoPagamento',
 ] as const;
 
 /** Errors of the library, with no SdI code. */
@@ -128,6 +143,7 @@ export type LibraryErrorCode = (typeof libraryErrorCodes)[number];
  */
 export type ProblemCode =
   | ParseErrorCode
+  | CreateInvoiceErrorCode
   | StructureCode
   | `sdi.${SdiErrorCode}`
   | `sdi.${SdiWarningCode}.warn`

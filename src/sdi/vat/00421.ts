@@ -1,9 +1,9 @@
+import { round2, toBig } from '../../arithmetic.js';
 import type { Problem } from '../../problem.js';
-import { bodies, riepiloghi, toBig } from '../fields.js';
+import { bodies, riepiloghi } from '../fields.js';
 import type { SdiRule } from '../rule.js';
 import { ELENCO_CONTROLLI, source } from '../sources.js';
 import { compareAmount } from './tolerance.js';
-import { round2 } from './values.js';
 
 /**
  * 00421: in each DatiRiepilogo, Imposta = AliquotaIVA × ImponibileImporto / 100, rounded to the

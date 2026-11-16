@@ -16,8 +16,8 @@ const OO_ALLOWED: readonly TipoDocumento[] = ['TD17', 'TD19'];
 export const rule00473: SdiRule = (fattura) => {
   const paese = text(parties(fattura).cedente?.IdPaese);
   if (paese === undefined) return [];
-  return documentTypes(fattura).flatMap(({ documento, tipo }) => {
-    const path = `${documento}.TipoDocumento`;
+  return documentTypes(fattura).flatMap(({ documentoPath, tipo }) => {
+    const path = `${documentoPath}.TipoDocumento`;
     if (isOneOf(tipo, FOREIGN_SUPPLIER) && paese === 'OO' && !isOneOf(tipo, OO_ALLOWED)) {
       return [
         sdiWarning(

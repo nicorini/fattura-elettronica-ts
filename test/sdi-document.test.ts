@@ -531,7 +531,7 @@ describe('00473: the country of the supplier must fit the type', () => {
 describe('00474: no line at zero rate in TD21', () => {
   // "IF (TipoDocumento == TD21) Per ogni BloccoDettaglioLinee IF ( AliquotaIVA == 0.00 ) ERRORE
   // (00474)" (Elenco controlli SdI 2.0, p. 43; also Allegato A 1.9.1, p. 119).
-  /** `fattura` with its only line at zero rate, nature N2.2, and its totals to match. */
+  /** `fattura` with its only line at zero rate, nature N2.2, its totals and its stamp duty. */
   function atZeroRate(fattura: FatturaElettronica): FatturaElettronica {
     const body = firstBody(fattura);
     Object.assign(body.DatiBeniServizi.DettaglioLinee[0] ?? {}, {
@@ -548,6 +548,11 @@ describe('00474: no line at zero rate in TD21', () => {
       },
     ];
     body.DatiGenerali.DatiGeneraliDocumento.ImportoTotaleDocumento = '100.00';
+    // 100.00 without VAT owes the stamp duty, else warn.bollo.
+    body.DatiGenerali.DatiGeneraliDocumento.DatiBollo = {
+      BolloVirtuale: 'SI',
+      ImportoBollo: '2.00',
+    };
     return fattura;
   }
 

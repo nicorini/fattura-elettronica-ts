@@ -13,8 +13,8 @@ const invoice = new URL('./fixtures/official/IT01234567890_FPR01.xml', import.me
 const directory = mkdtempSync(join(tmpdir(), 'fattura-readme-'));
 afterAll(() => rmSync(directory, { recursive: true }));
 
-test('the README has the five examples: overview, read, build, problems, menus', () => {
-  expect(examples).toHaveLength(5);
+test('the README has the six examples: overview, read, build, createInvoice, problems, menus', () => {
+  expect(examples).toHaveLength(6);
 });
 
 test.each(examples.map((code, i) => [i + 1, code] as const))('example %i runs', async (i, code) => {
