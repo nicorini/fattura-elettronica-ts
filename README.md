@@ -19,8 +19,8 @@ Interscambio (SdI).
   il solo file, ognuno con il codice ufficiale (`00423`…), il campo, un messaggio in italiano e il
   documento dell'Agenzia delle Entrate da cui viene. Mai più severi del SdI: nel dubbio, un avviso.
 - **JavaScript standard.** Solo ESM, tipi inclusi, due dipendenze in JavaScript puro e nessuna
-  nativa, meno di 30 kB minificata e compressa. Gira su Node ≥ 22, Bun e Deno (vedi
-  [Runtime](#runtime)).
+  nativa, meno di 30 kB minificata e compressa. Gira su Node ≥ 22, Bun, Deno, nel browser e su
+  workerd (vedi [Runtime](#runtime)).
 
 **Stato: 0.x.** La 0.1 è la prima versione pubblicata. Fino alla 1.0 l'API può cambiare da una
 minor all'altra (da 0.1 a 0.2), mai in una patch: con il `^0.1.0` che npm scrive di default ricevi
@@ -28,8 +28,8 @@ solo le patch. Ogni cambiamento è nel [changelog](CHANGELOG.md).
 
 _English: a TypeScript library to read, write and validate Italian e-invoices (FatturaPA). Typed
 model generated 1:1 from the official XSD, amounts as strings, validation with the official codes
-of the exchange system (SdI). ESM only, no native dependencies; tested on Node ≥ 22, Bun and Deno.
-The documentation is in Italian._
+of the exchange system (SdI). ESM only, no native dependencies; tested on Node ≥ 22, Bun, Deno,
+headless Chromium and workerd. The documentation is in Italian._
 
 ## Installazione
 
@@ -262,15 +262,17 @@ comando.
 
 ## Runtime
 
-| Runtime               | Come è provato in CI                                                      |
-| --------------------- | ------------------------------------------------------------------------- |
-| Node 22, 24 e 26      | tutti i test, a ogni commit                                               |
-| Bun e Deno            | il pacchetto, installato come da npm, legge e valida un esempio ufficiale |
-| Browser, runtime edge | non ancora provati                                                        |
+| Runtime                     | Come è provato in CI                                                      |
+| --------------------------- | ------------------------------------------------------------------------- |
+| Node 22, 24 e 26            | tutti i test, a ogni commit                                               |
+| Bun e Deno                  | il pacchetto, installato come da npm, legge e valida un esempio ufficiale |
+| Browser (Chromium headless) | come Bun e Deno, con il pacchetto in un bundle e l'esempio scaricato      |
+| Edge (workerd)              | come Bun e Deno, con il pacchetto in un bundle e l'esempio incorporato    |
 
-Il codice della libreria non usa API di Node né del browser (lo verifica il compilatore), quindi è
-pensato per funzionare anche nei browser e nei runtime edge, ma oggi nessun test lo prova. Se lo
-usi lì, una segnalazione, di successo o di problema, aiuta.
+Il codice della libreria non usa API di Node né del browser (lo verifica il compilatore), quindi
+funziona senza file system: nel browser e su workerd, il runtime di Cloudflare Workers, riceve i
+byte della fattura. Sugli altri browser e runtime edge non è provato: se la usi lì, una
+segnalazione, di successo o di problema, aiuta.
 
 ## Specifiche supportate
 
