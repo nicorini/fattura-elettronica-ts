@@ -13,8 +13,11 @@ import { rolldown } from 'rolldown';
  *
  * - 0.1: 26 835 bytes.
  * - Descriptions of `CausalePagamento` and `BolloVirtuale`, the whole official text: 29 503 bytes.
+ * - Level 2, `createInvoice` with its formulas shared by the new warnings of `validate`: 32 754
+ *   bytes. Kept in the main entry: a separate entry would save little, since `validate` uses the
+ *   same formulas.
  */
-const LIMIT_BYTES = 32_453;
+const LIMIT_BYTES = 36_030;
 
 const bundle = await rolldown({ input: 'dist/index.js', platform: 'neutral', logLevel: 'silent' });
 const { output } = await bundle.generate({ format: 'esm', minify: true });
