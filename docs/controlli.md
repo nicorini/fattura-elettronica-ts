@@ -46,6 +46,18 @@ come problema sul percorso vuoto, senza `sdiCode`.
 | `xml.encoding`     | errore  | codifica non supportata (sono supportate UTF-8, ISO-8859-1 e windows-1252), o byte non validi |
 | `xml.doctype`      | errore  | il file ha un `DOCTYPE`, rifiutato per sicurezza (attacchi XXE e "billion laughs")            |
 
+### Ingresso di `createInvoice`
+
+Gli stessi codici di `CreateInvoiceError`, l'eccezione di `createInvoice` (tipo
+`CreateInvoiceErrorCode`): `validate` non li dà mai. Ogni problema ha `code`, `path` e `message`;
+l'eccezione li raccoglie tutti.
+
+| Codice                          | Cosa segnala                                                                                                                                                                                   |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `create.number`                 | un importo, un'aliquota o una quantità è un `number` che `decimal(n)` rifiuta (non finito, con l'esponente, più di 15 cifre significative), o una stringa che non è un numero decimale         |
+| `create.scontoAmbiguo`          | uno `ScontoMaggiorazione` di una riga senza `PrezzoTotale` ha sia `Importo` sia `Percentuale`, o un `Importo` negativo: la direzione la dà `Tipo`                                              |
+| `create.importoTotaleDocumento` | il documento ha uno `ScontoMaggiorazione` e manca `ImportoTotaleDocumento`: in quel caso `createInvoice` non lo calcola, perché il formato non dice se lo sconto si applica prima o dopo l'IVA |
+
 ### Struttura (XSD)
 
 Il file non rispetta lo schema XSD 1.2.3: il SdI lo scarta con il codice 00200, che è il `sdiCode`

@@ -3,6 +3,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { addDescriptions, type DescriptionsFile } from './descriptions.ts';
 import { emitCodeLists } from './emit-code-lists.ts';
+import { emitInput } from './emit-input.ts';
 import { emitModel } from './emit-model.ts';
 import { emitSchema } from './emit-schema.ts';
 import { emitSimpleTypes } from './emit-simple-types.ts';
@@ -23,6 +24,7 @@ const header = (from: readonly string[]): string =>
 mkdirSync(OUT, { recursive: true });
 for (const [file, from, content] of [
   ['model.ts', [XSD], emitModel(schema)],
+  ['input.ts', [XSD], emitInput(schema)],
   ['code-lists.ts', [XSD, DESCRIPTIONS], emitCodeLists(addDescriptions(schema, descriptions))],
   ['schema.ts', [XSD], emitSchema(schema)],
   ['simple-types.ts', [XSD], emitSimpleTypes(schema)],

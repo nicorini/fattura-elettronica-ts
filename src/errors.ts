@@ -1,3 +1,4 @@
+import type { createCodes } from './codes.js';
 import type { Problem } from './problem.js';
 
 /** Codes of {@link ParseError}: stable, unlike the message. */
@@ -55,6 +56,49 @@ export class BuildError extends Error {
         first === undefined
           ? ''
           : ` Il primo: ${first.path === '' ? '' : `${first.path}: `}${first.message}`
+      }`,
+    );
+    this.problems = problems;
+  }
+}
+
+/** Codes of {@link CreateInvoiceError}: stable, unlike the message. */
+export type CreateInvoiceErrorCode = (typeof createCodes)[number];
+
+/** A problem of the input of `createInvoice`, with the same `code`, `path` and `message` as a `Problem`. */
+export interface CreateInvoiceProblem {
+  /** What is wrong, stable across releases. */
+  readonly code: CreateInvoiceErrorCode;
+  /** Where, with the names of the model: `FatturaElettronicaBody[0].DatiBeniServizi.DettaglioLinee[1].Quantita`. */
+  readonly path: string;
+  /** What is wrong, in Italian. */
+  readonly message: string;
+}
+
+/**
+ * Thrown by `createInvoice` when it can't compute the invoice from the input. It lists every
+ * problem of the input at once.
+ *
+ * - `create.number`: an amount, rate or quantity is a `number` that `decimal(n)` refuses (not
+ *   finite, with an exponent, more than 15 significant digits) or a string that is not a decimal.
+ * - `create.scontoAmbiguo`: a ScontoMaggiorazione of a line whose PrezzoTotale is computed has both
+ *   Importo and Percentuale, or a negative Importo (`Tipo` gives the direction).
+ * - `create.importoTotaleDocumento`: the document has a ScontoMaggiorazione and no
+ *   ImportoTotaleDocumento, which `createInvoice` doesn't compute in that case.
+ *
+ * The message is in Italian and names the first problem.
+ */
+export class CreateInvoiceError extends Error {
+  override readonly name: string = 'CreateInvoiceError';
+  /** The problems, in the order of the input; never empty. */
+  readonly problems: readonly CreateInvoiceProblem[];
+
+  constructor(problems: readonly CreateInvoiceProblem[]) {
+    const [first] = problems;
+    const count = problems.length === 1 ? '1 problema' : `${problems.length} problemi`;
+    super(
+      `L'ingresso di createInvoice ha ${count}.${
+        first === undefined ? '' : ` Il primo: ${first.path}: ${first.message}`
       }`,
     );
     this.problems = problems;
