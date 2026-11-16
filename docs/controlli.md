@@ -30,6 +30,7 @@ dati che ha solo l'Agenzia (vedi [Controlli non verificabili in locale](#control
 | Specifiche SdI             | [Specifiche tecniche del Sistema di Interscambio, versione 1.8.4](https://www.fatturapa.gov.it/export/documenti/Specifiche-tecniche-relative-al-Sistema-di-Interscambio-versione-1.8.4.pdf)               |
 | Formato                    | [Specifiche tecniche del formato FatturaPA, versione 1.4](https://www.fatturapa.gov.it/export/documenti/fatturapa/v1.4/Specifiche_tecniche_del_formato_FatturaPA_V1.4.pdf)                                |
 | Rappresentazione tabellare | [Rappresentazione tabellare del tracciato fattura ordinaria](https://www.fatturapa.gov.it/export/documenti/fatturapa/v1.4/RappresentazioneTabellareFattOrdinaria-1.pdf), colonna "Controlli extra schema" |
+| Specifiche bollo           | [Specifiche tecniche del bollo, versione 1.3](https://www.agenziaentrate.gov.it/portale/documents/20143/3226207/Specifiche+tecniche_v1.3.pdf/107243a0-7760-4a49-10b9-ec8e6d69e24e)                        |
 | XSD                        | [Schema FatturaPA 1.2.3](https://www.fatturapa.gov.it/export/documenti/fatturapa/v1.4/Schema_VFPR12_v1.2.3.xsd)                                                                                           |
 
 ## Codici della libreria
@@ -96,6 +97,7 @@ Il SdI accetta la fattura, ma qualcosa non torna. Nessuno ha `sdiCode`.
 | `warn.codiceFiscale`           | codice fiscale di forma o carattere di controllo sbagliato per un soggetto che il SdI non controlla: terzo intermediario, vettore, `CFQuietanzante`                                                            | DM Finanze 23/12/1976, artt. 6–9 |
 | `warn.idTrasmittenteMinuscolo` | `IdTrasmittente/IdCodice` è un codice fiscale valido ma scritto in minuscolo                                                                                                                                   | Elenco controlli, p. 7 (00300)   |
 | `warn.pecDestinatario`         | `PECDestinatario` con `CodiceDestinatario` diverso da `0000000`, o in una fattura alla PA                                                                                                                      | Formato, p. 10                   |
+| `warn.bollo`                   | manca `BolloVirtuale` `SI` e le righe N2.1, N2.2, N3.5, N3.6, N4 (tolte quelle con `TipoDato` NB1–NB3) superano 77,47 €; mai con TD16–TD19, TD28, RF05–RF11 o `CodiceDestinatario` `XXXXXXX`                   | Specifiche bollo, pp. 4–6        |
 
 ### Errori della libreria
 

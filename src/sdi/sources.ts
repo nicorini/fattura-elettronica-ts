@@ -7,6 +7,11 @@ export const ELENCO_CONTROLLI = 'Elenco controlli SdI 2.0';
 export const ALLEGATO_A = 'Allegato A, Specifiche tecniche 1.9.1';
 /** Specifiche tecniche operative del formato FatturaPA, 1.4 (31/01/2025). */
 export const SPECIFICHE_FORMATO = 'Specifiche tecniche del formato FatturaPA 1.4';
+/**
+ * Specifiche tecniche del bollo, 1.3 (29/03/2023), annexed to the provvedimento of 4/2/2021: how
+ * the Agenzia finds the invoices that lack the stamp duty.
+ */
+export const SPECIFICHE_BOLLO = 'Specifiche tecniche del bollo 1.3';
 
 /**
  * Rappresentazione tabellare del tracciato fattura ordinaria, published with the Specifiche del

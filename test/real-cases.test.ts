@@ -517,6 +517,11 @@ describe('codes other libraries refused', () => {
       },
     ];
     body.DatiGenerali.DatiGeneraliDocumento.ImportoTotaleDocumento = '100.00';
+    // 100.00 without VAT owes the stamp duty, else warn.bollo.
+    body.DatiGenerali.DatiGeneraliDocumento.DatiBollo = {
+      BolloVirtuale: 'SI',
+      ImportoBollo: '2.00',
+    };
     expectReadAndWritten(fattura);
   });
 
