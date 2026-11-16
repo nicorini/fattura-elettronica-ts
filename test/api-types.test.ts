@@ -46,6 +46,9 @@ test('createInvoice takes the model with the computed fields optional, and retur
     Imposta?: string | number;
   }>();
   expectTypeOf<Documento['ImportoTotaleDocumento']>().toEqualTypeOf<string | number | undefined>();
+  expectTypeOf<
+    NonNullable<Documento['DatiCassaPrevidenziale']>[number]['ImportoContributoCassa']
+  >().toEqualTypeOf<string | number | undefined>();
 });
 
 test('the decimals of the input take a string or a number, the other leaves only a string', () => {
@@ -68,7 +71,10 @@ test('a CreateInvoiceError lists its problems, each with a CreateInvoiceErrorCod
   expectTypeOf<CreateInvoiceError['problems']>().toEqualTypeOf<readonly CreateInvoiceProblem[]>();
   expectTypeOf<CreateInvoiceProblem['code']>().toEqualTypeOf<CreateInvoiceErrorCode>();
   expectTypeOf<CreateInvoiceErrorCode>().toEqualTypeOf<
-    'create.number' | 'create.scontoAmbiguo' | 'create.importoTotaleDocumento'
+    | 'create.number'
+    | 'create.scontoAmbiguo'
+    | 'create.imponibileCassa'
+    | 'create.importoTotaleDocumento'
   >();
   expectTypeOf<CreateInvoiceErrorCode>().toExtend<ProblemCode>();
 });

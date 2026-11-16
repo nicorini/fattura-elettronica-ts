@@ -2,6 +2,7 @@ import { CreateInvoiceError } from '../errors.js';
 import type { CreateInvoiceInput } from '../generated/input.js';
 import type { FatturaElettronica } from '../generated/model.js';
 import { bodies } from '../sdi/fields.js';
+import { fillImportoContributoCassa } from './cassa.js';
 import { convertNumbers } from './numbers.js';
 import { fillPrezzoTotale } from './prezzo-totale.js';
 import { Problems } from './problems.js';
@@ -15,12 +16,14 @@ import { fillImportoTotaleDocumento } from './totale.js';
  * decimals, rounded once, half-up away from zero. Each body of a lot is computed on its own.
  *
  * Computed: `PrezzoTotale` of each line (`PrezzoUnitario`, after each `ScontoMaggiorazione` in
- * order, × `Quantita`, 1 if missing); one `DatiRiepilogo` per `AliquotaIVA` and `Natura` of lines
- * and `DatiCassaPrevidenziale`, in order of first appearance, with `ImponibileImporto` (their sum
- * plus its `Arrotondamento`) and `Imposta`; `ImportoTotaleDocumento` (Σ `ImponibileImporto` + Σ
- * `Imposta` + `Arrotondamento`), only without a `ScontoMaggiorazione` of the document. A
- * `DatiRiepilogo` of the input with the same `AliquotaIVA` and `Natura` gives its fields
- * (`EsigibilitaIVA`, `RiferimentoNormativo`, the amounts), and the rest is computed.
+ * order, × `Quantita`, 1 if missing); `ImportoContributoCassa` of each `DatiCassaPrevidenziale`
+ * (`ImponibileCassa` × `AlCassa` / 100, with `ImponibileCassa` required); one `DatiRiepilogo` per
+ * `AliquotaIVA` and `Natura` of lines and `DatiCassaPrevidenziale`, in order of first appearance,
+ * with `ImponibileImporto` (their sum plus its `Arrotondamento`) and `Imposta`;
+ * `ImportoTotaleDocumento` (Σ `ImponibileImporto` + Σ `Imposta` + `Arrotondamento`), only without a
+ * `ScontoMaggiorazione` of the document. A `DatiRiepilogo` of the input with the same `AliquotaIVA`
+ * and `Natura` gives its fields (`EsigibilitaIVA`, `RiferimentoNormativo`, the amounts), and the
+ * rest is computed.
  *
  * It doesn't check the structure: `build` and `validate` do, on the object it returns.
  *
@@ -33,6 +36,7 @@ export function createInvoice(input: CreateInvoiceInput): FatturaElettronica {
   const fattura = convertNumbers(input, problems);
   for (const body of bodies(fattura)) {
     fillPrezzoTotale(body, problems);
+    fillImportoContributoCassa(body, problems);
     fillDatiRiepilogo(body);
     fillImportoTotaleDocumento(body, problems);
   }

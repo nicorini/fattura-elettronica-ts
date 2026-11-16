@@ -5,13 +5,21 @@ import { fpr12Input } from '../../test/helpers/invoices.ts';
 import { COMPUTED_FIELDS } from './emit-input.ts';
 
 test('createInvoice fills every computed field of the generator, and no other is optional', () => {
-  const fattura: FatturaElettronica = createInvoice(fpr12Input());
+  const input = fpr12Input();
+  const documento = input.FatturaElettronicaBody[0]?.DatiGenerali.DatiGeneraliDocumento;
+  if (documento !== undefined) {
+    documento.DatiCassaPrevidenziale = [
+      { TipoCassa: 'TC04', AlCassa: '4.00', ImponibileCassa: '100.00', AliquotaIVA: '22.00' },
+    ];
+  }
+  const fattura: FatturaElettronica = createInvoice(input);
   const [body] = fattura.FatturaElettronicaBody;
   // One block of each model type with a computed field, from the output.
   const blocks: { readonly [type: string]: object | undefined } = {
     DettaglioLinee: body?.DatiBeniServizi.DettaglioLinee[0],
     DatiBeniServizi: body?.DatiBeniServizi,
     DatiRiepilogo: body?.DatiBeniServizi.DatiRiepilogo[0],
+    DatiCassaPrevidenziale: body?.DatiGenerali.DatiGeneraliDocumento.DatiCassaPrevidenziale?.[0],
     DatiGeneraliDocumento: body?.DatiGenerali.DatiGeneraliDocumento,
   };
   expect(Object.keys(COMPUTED_FIELDS).sort()).toEqual(Object.keys(blocks).sort());

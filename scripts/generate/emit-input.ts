@@ -21,6 +21,7 @@ export const COMPUTED_FIELDS: { readonly [type: string]: readonly string[] } = {
   DettaglioLinee: ['PrezzoTotale'],
   DatiBeniServizi: ['DatiRiepilogo'],
   DatiRiepilogo: ['ImponibileImporto', 'Imposta'],
+  DatiCassaPrevidenziale: ['ImportoContributoCassa'],
   DatiGeneraliDocumento: ['ImportoTotaleDocumento'],
 };
 

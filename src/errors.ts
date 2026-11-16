@@ -83,6 +83,8 @@ export interface CreateInvoiceProblem {
  *   finite, with an exponent, more than 15 significant digits) or a string that is not a decimal.
  * - `create.scontoAmbiguo`: a ScontoMaggiorazione of a line whose PrezzoTotale is computed has both
  *   Importo and Percentuale, or a negative Importo (`Tipo` gives the direction).
+ * - `create.imponibileCassa`: a DatiCassaPrevidenziale has neither ImponibileCassa nor
+ *   ImportoContributoCassa: the base of the contributo is not something the library can pick.
  * - `create.importoTotaleDocumento`: the document has a ScontoMaggiorazione and no
  *   ImportoTotaleDocumento, which `createInvoice` doesn't compute in that case.
  *

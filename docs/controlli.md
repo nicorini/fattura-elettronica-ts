@@ -56,6 +56,7 @@ l'eccezione li raccoglie tutti.
 | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `create.number`                 | un importo, un'aliquota o una quantità è un `number` che `decimal(n)` rifiuta (non finito, con l'esponente, più di 15 cifre significative), o una stringa che non è un numero decimale         |
 | `create.scontoAmbiguo`          | uno `ScontoMaggiorazione` di una riga senza `PrezzoTotale` ha sia `Importo` sia `Percentuale`, o un `Importo` negativo: la direzione la dà `Tipo`                                              |
+| `create.imponibileCassa`        | un `DatiCassaPrevidenziale` non ha né `ImponibileCassa` né `ImportoContributoCassa`: la base del contributo la indica l'utente, perché il formato non lega righe e cassa                       |
 | `create.importoTotaleDocumento` | il documento ha uno `ScontoMaggiorazione` e manca `ImportoTotaleDocumento`: in quel caso `createInvoice` non lo calcola, perché il formato non dice se lo sconto si applica prima o dopo l'IVA |
 
 ### Struttura (XSD)

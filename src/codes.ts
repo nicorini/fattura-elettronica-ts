@@ -100,6 +100,7 @@ export const libraryWarningCodes = [
 export const createCodes = [
   'create.number',
   'create.scontoAmbiguo',
+  'create.imponibileCassa',
   'create.importoTotaleDocumento',
 ] as const;
 

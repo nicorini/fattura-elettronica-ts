@@ -251,6 +251,140 @@ describe('DatiRiepilogo', () => {
   });
 });
 
+type CassaInput = NonNullable<
+  BodyInput['DatiGenerali']['DatiGeneraliDocumento']['DatiCassaPrevidenziale']
+>[number];
+
+/** An input of {@link withLines} with these DatiCassaPrevidenziale. */
+function withCasse(
+  lines: Parameters<typeof withLines>,
+  ...casse: CassaInput[]
+): CreateInvoiceInput {
+  const input = withLines(...lines);
+  inputBody(input).DatiGenerali.DatiGeneraliDocumento.DatiCassaPrevidenziale = casse;
+  return input;
+}
+
+function casse(fattura: FatturaElettronica) {
+  return firstBody(fattura).DatiGenerali.DatiGeneraliDocumento.DatiCassaPrevidenziale ?? [];
+}
+
+// ImponibileCassa: "importo totale del volume di affari sul quale occorre applicare il contributo
+// di cassa previdenziale"; ImportoContributoCassa: "importo del contributo alla cassa di
+// appartenenza" (Specifiche tecniche FatturaPA 1.4, pag. 19,
+// https://www.fatturapa.gov.it/export/documenti/fatturapa/v1.4/Specifiche_tecniche_del_formato_FatturaPA_V1.4.pdf).
+describe('DatiCassaPrevidenziale', () => {
+  // The contributo integrativo is in the VAT base of the service: "concorrono a formare la base
+  // imponibile le maggiorazioni ... addebitate dai soggetti iscritti in albi professionali a
+  // titolo di contributo integrativo dovuto alla cassa di previdenza" (art. 16 D.L. 41/1995,
+  // https://www.edizionieuropee.it/law/html/88/zn95_19_196.html), as the Agenzia repeats in
+  // Circolare 5/E/2021, §3.4, p. 21
+  // (https://www.dirittobancario.it/wp-content/uploads/sites/default/files/allegati/circolare_agenzia_delle_entrate_14_maggio_2021_n._5-e.pdf).
+  test('computes the contributo of a professional cassa at 4%, in the summary of its VAT rate', () => {
+    const fattura = create(
+      withCasse([{ PrezzoUnitario: '1000.00', AliquotaIVA: '22.00' }], {
+        TipoCassa: 'TC04',
+        AlCassa: '4.00',
+        ImponibileCassa: '1000.00',
+        AliquotaIVA: '22.00',
+      }),
+    );
+    expect(casse(fattura)[0]?.ImportoContributoCassa).toBe('40.00');
+    // (1000 + 40) × 22% = 228.80
+    expect(servizi(fattura).DatiRiepilogo).toEqual([
+      { AliquotaIVA: '22.00', ImponibileImporto: '1040.00', Imposta: '228.80' },
+    ]);
+    expect(totale(fattura)).toBe('1268.80');
+  });
+
+  // The rivalsa INPS of the gestione separata is "una percentuale nella misura del 4 per cento dei
+  // compensi lordi" (art. 1, c. 212 L. 662/1996), and it "concorre a formare la base imponibile
+  // dell'imposta sul valore aggiunto" (messaggio INPS 7751 del 7/5/2012, pag. 2,
+  // https://servizi2.inps.it/MessaggiZIP/Messaggio%20numero%207751%20del%2007-05-2012.pdf), where
+  // the law is quoted in note 1. In the format it is the cassa "TC22 INPS" (Specifiche tecniche
+  // FatturaPA 1.4, pag. 55).
+  test('computes the rivalsa INPS as a TC22 cassa, subject to VAT', () => {
+    const input = withCasse([{ PrezzoUnitario: '750.00', AliquotaIVA: '22.00', Ritenuta: 'SI' }], {
+      TipoCassa: 'TC22',
+      AlCassa: '4.00',
+      ImponibileCassa: '750.00',
+      AliquotaIVA: '22.00',
+      Ritenuta: 'SI',
+    });
+    // The same message: the rivalsa "deve essere assoggettata al prelievo alla fonte" (pag. 2).
+    inputBody(input).DatiGenerali.DatiGeneraliDocumento.DatiRitenuta = [
+      {
+        TipoRitenuta: 'RT01',
+        ImportoRitenuta: '156.00',
+        AliquotaRitenuta: '20.00',
+        CausalePagamento: 'A',
+      },
+    ];
+    const fattura = create(input);
+    expect(casse(fattura)[0]?.ImportoContributoCassa).toBe('30.00');
+    // (750 + 30) × 22% = 171.60
+    expect(servizi(fattura).DatiRiepilogo).toEqual([
+      { AliquotaIVA: '22.00', ImponibileImporto: '780.00', Imposta: '171.60' },
+    ]);
+    expect(totale(fattura)).toBe('951.60');
+  });
+
+  // The forfettari invoice with "aliquota 0" and Natura N2.2 "Non soggette - altri casi", and fill
+  // the box "Dati cassa previdenziale" (AdE, "Fattura elettronica per i forfettari",
+  // https://www.agenziaentrate.gov.it/portale/fattura-elettronica-per-i-forfettari).
+  test('puts the contributo of a forfettario in the summary of Natura N2.2, with no tax', () => {
+    const input = withCasse([{ PrezzoUnitario: '1000.00', AliquotaIVA: '0.00', Natura: 'N2.2' }], {
+      TipoCassa: 'TC22',
+      AlCassa: '4.00',
+      ImponibileCassa: '1000.00',
+      AliquotaIVA: '0.00',
+      Natura: 'N2.2',
+    });
+    input.FatturaElettronicaHeader.CedentePrestatore.DatiAnagrafici.RegimeFiscale = 'RF19';
+    const fattura = create(input);
+    expect(casse(fattura)[0]?.ImportoContributoCassa).toBe('40.00');
+    expect(servizi(fattura).DatiRiepilogo).toEqual([
+      { AliquotaIVA: '0.00', Natura: 'N2.2', ImponibileImporto: '1040.00', Imposta: '0.00' },
+    ]);
+    expect(totale(fattura)).toBe('1040.00');
+  });
+
+  // A studio associato "È possibile inserire in fattura elettronica riferimenti a più Casse
+  // previdenziali", one block each (FAQ AdE "Compilazione della fattura elettronica",
+  // https://www.agenziaentrate.gov.it/portale/it/web/guest/schede/comunicazioni/fatture-e-corrispettivi/faq-fe/risposte-alle-domande-piu-frequenti-categoria/compilazione-della-fattura-elettronica).
+  test('computes each block on its own base, rounding once to the cent, half-up', () => {
+    const fattura = create(
+      withCasse(
+        [
+          { PrezzoUnitario: '500.25', AliquotaIVA: '22.00' },
+          { PrezzoUnitario: '333.33', AliquotaIVA: '22.00' },
+        ],
+        { TipoCassa: 'TC21', AlCassa: '2.00', ImponibileCassa: '500.25', AliquotaIVA: '22.00' },
+        { TipoCassa: 'TC04', AlCassa: 4, ImponibileCassa: 333.33, AliquotaIVA: 22 },
+      ),
+    );
+    // 500.25 × 2% = 10.005 → 10.01; 333.33 × 4% = 13.3332 → 13.33
+    expect(casse(fattura).map((cassa) => cassa.ImportoContributoCassa)).toEqual(['10.01', '13.33']);
+    // 500.25 + 333.33 + 10.01 + 13.33 = 856.92; × 22% = 188.5224
+    expect(servizi(fattura).DatiRiepilogo).toEqual([
+      { AliquotaIVA: '22.00', ImponibileImporto: '856.92', Imposta: '188.52' },
+    ]);
+  });
+
+  test('keeps an ImportoContributoCassa written by the user, and sums it as it is', () => {
+    const fattura = create(
+      withCasse([{ PrezzoUnitario: '1000.00', AliquotaIVA: '22.00' }], {
+        TipoCassa: 'TC04',
+        AlCassa: '4.00',
+        ImportoContributoCassa: 39,
+        AliquotaIVA: '22.00',
+      }),
+    );
+    expect(casse(fattura)[0]?.ImportoContributoCassa).toBe('39.00');
+    expect(servizi(fattura).DatiRiepilogo[0]?.ImponibileImporto).toBe('1039.00');
+  });
+});
+
 // ImportoTotaleDocumento: "Importo totale del documento al netto dell'eventuale sconto e
 // comprensivo di imposta a debito del cessionario / committente" (Rappresentazione tabellare del
 // tracciato FatturaPA, 2.1.1.9,
@@ -392,6 +526,26 @@ describe('CreateInvoiceError', () => {
     ]);
   });
 
+  // The format doesn't link lines and cassa, and with more blocks only the user knows the share of
+  // each professional: ImponibileCassa is the "importo totale del volume di affari sul quale
+  // occorre applicare il contributo" (Specifiche tecniche FatturaPA 1.4, pag. 19), not a sum the
+  // library can pick.
+  test('create.imponibileCassa for each cassa with neither ImponibileCassa nor its contributo', () => {
+    const input = withCasse(
+      [{ PrezzoUnitario: '1000.00', AliquotaIVA: '22.00' }],
+      { TipoCassa: 'TC04', AlCassa: '4.00', AliquotaIVA: '22.00' },
+      { TipoCassa: 'TC22', AlCassa: '4.00', ImportoContributoCassa: '40.00', AliquotaIVA: '22.00' },
+      { TipoCassa: 'TC02', AlCassa: '4.00', AliquotaIVA: '22.00' },
+    );
+    expect(problemsOf(() => createInvoice(input))).toEqual(
+      [0, 2].map((index) => ({
+        code: 'create.imponibileCassa',
+        path: `${DOCUMENTO}.DatiCassaPrevidenziale[${index}].ImponibileCassa`,
+        message: expect.stringContaining('ImportoContributoCassa'),
+      })),
+    );
+  });
+
   test('collects every problem of the input before throwing, with a message naming the first', () => {
     const input = withLines(
       { PrezzoUnitario: 0.1 + 0.2, AliquotaIVA: '22.00' },
@@ -404,6 +558,9 @@ describe('CreateInvoiceError', () => {
     );
     inputBody(input).DatiGenerali.DatiGeneraliDocumento.ScontoMaggiorazione = [
       { Tipo: 'SC', Importo: '2.00' },
+    ];
+    inputBody(input).DatiGenerali.DatiGeneraliDocumento.DatiCassaPrevidenziale = [
+      { TipoCassa: 'TC04', AlCassa: '4.00', AliquotaIVA: '22.00' },
     ];
     let thrown: unknown;
     try {
@@ -418,11 +575,12 @@ describe('CreateInvoiceError', () => {
       ['create.number', `${SERVIZI}.DettaglioLinee[0].PrezzoUnitario`],
       ['create.number', `${SERVIZI}.DettaglioLinee[1].Quantita`],
       ['create.scontoAmbiguo', `${SERVIZI}.DettaglioLinee[1].ScontoMaggiorazione[0]`],
+      ['create.imponibileCassa', `${DOCUMENTO}.DatiCassaPrevidenziale[0].ImponibileCassa`],
       ['create.importoTotaleDocumento', `${DOCUMENTO}.ImportoTotaleDocumento`],
     ]);
     expect(error.name).toBe('CreateInvoiceError');
     expect(error.message).toMatch(
-      /^L'ingresso di createInvoice ha 4 problemi\. Il primo: .*PrezzoUnitario/,
+      /^L'ingresso di createInvoice ha 5 problemi\. Il primo: .*PrezzoUnitario/,
     );
   });
 });

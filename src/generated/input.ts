@@ -119,7 +119,8 @@ export interface DatiBolloInput {
 export interface DatiCassaPrevidenzialeInput {
   TipoCassa: Model.TipoCassa;
   AlCassa: string | number;
-  ImportoContributoCassa: string | number;
+  /** Computed by `createInvoice` when missing. */
+  ImportoContributoCassa?: string | number;
   ImponibileCassa?: string | number;
   AliquotaIVA: string | number;
   Ritenuta?: Model.Ritenuta;
