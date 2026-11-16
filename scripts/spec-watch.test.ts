@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { checkEditions, checkSources, renderIssue, type Source } from './spec-watch.ts';
+import {
+  checkEditions,
+  checkSources,
+  renderEditionIssue,
+  renderIssue,
+  type Source,
+} from './spec-watch.ts';
 
 // A fake network: each URL answers with fixed text.
 function fakeFetch(responses: Record<string, string>) {
@@ -88,7 +94,7 @@ describe('checkEditions', () => {
 
   it('reports, from 1 February, a yearly source whose edition is of a past year', () => {
     expect(checkEditions(sources, new Date('2027-02-01T00:00:00Z'))).toEqual([
-      { kind: 'edition', name: 'Istruzioni CU 2026', edition: '2026', year: 2027 },
+      { name: 'Istruzioni CU 2026', edition: '2026', year: 2027 },
     ]);
   });
 
@@ -98,6 +104,13 @@ describe('checkEditions', () => {
 
   it('reports nothing when the yearly edition is of the current year', () => {
     expect(checkEditions(sources, new Date('2026-11-16T00:00:00Z'))).toEqual([]);
+  });
+
+  it('fails on a yearly source whose edition is not a year', () => {
+    const notAYear = { rt: { name: 'Rappresentazione tabellare', edition: '1.2.3', yearly: true } };
+    expect(() => checkEditions(notAYear, new Date('2027-02-01T00:00:00Z'))).toThrow(
+      'Rappresentazione tabellare comes out every year, but its edition 1.2.3 is not a year',
+    );
   });
 });
 
@@ -154,13 +167,13 @@ File: https://example.it/a.pdf
 `;
     expect(body).toBe(expected);
   });
+});
 
+describe('renderEditionIssue', () => {
   it('says the descriptions are on an old edition and how to move them to the new one', () => {
-    const body = renderIssue([
-      { kind: 'edition', name: 'Istruzioni CU 2026', edition: '2026', year: 2027 },
-    ]);
+    const body = renderEditionIssue([{ name: 'Istruzioni CU 2026', edition: '2026', year: 2027 }]);
 
-    const expected = `Il sorvegliante delle specifiche ha trovato qualcosa da controllare.
+    const expected = `Il sorvegliante delle specifiche ha trovato descrizioni dei codici ferme a un'edizione passata della loro fonte.
 
 ## Istruzioni CU 2026
 

@@ -99,14 +99,25 @@ La libreria segue le specifiche in vigore della fattura elettronica: lo schema X
 1.2.3 (in `specs/`), l'Elenco controlli del SdI, le Specifiche tecniche del SdI e l'Allegato A
 dell'Agenzia delle Entrate.
 
-L'Agenzia non annuncia gli aggiornamenti. Ogni settimana un workflow (`spec-watch.yml`) scarica
-le pagine e i file elencati in `specs/sources.json` e li confronta con le impronte salvate: per un
-file l'hash SHA-256, per una pagina l'elenco dei documenti che collega. Se qualcosa cambia apre
-una issue. In locale:
+Le descrizioni dei codici che l'XSD non ha vengono da altri documenti ufficiali, elencati in
+`specs/code-list-descriptions.json`: per `CausalePagamento` le istruzioni della Certificazione
+Unica, che escono ogni anno.
+
+L'Agenzia non annuncia gli aggiornamenti. Ogni settimana un workflow (`spec-watch.yml`) fa due
+controlli, ciascuno con la sua issue:
+
+- scarica le pagine e i file elencati in `specs/sources.json` e li confronta con le impronte
+  salvate: per un file l'hash SHA-256, per una pagina l'elenco dei documenti che collega. Se
+  qualcosa cambia apre una issue;
+- dal 1° febbraio, se una fonte annuale delle descrizioni (`"yearly": true`) è ancora
+  sull'edizione dell'anno prima, apre una issue che spiega come passare alla nuova.
+
+In locale:
 
 ```sh
-pnpm specs:watch            # confronta e stampa le differenze
-pnpm specs:watch --update   # salva le impronte attuali in specs/sources.json
+pnpm specs:watch              # confronta e stampa le differenze
+pnpm specs:watch --update     # salva le impronte attuali in specs/sources.json
+pnpm specs:watch --editions   # controlla le edizioni delle fonti annuali
 ```
 
 Un aggiornamento delle specifiche esce sempre come versione `minor`.

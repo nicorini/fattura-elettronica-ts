@@ -1,16 +1,19 @@
 import { createHash } from 'node:crypto';
 import { readFile, writeFile } from 'node:fs/promises';
 import { parseArgs } from 'node:util';
+import type { DescriptionSource } from './generate/descriptions.ts';
 
 /**
  * Specification watcher: downloads the pages and files of the official specifications listed in
- * `specs/sources.json` and reports what differs from the fingerprints saved there. It also reports
- * the yearly sources of `specs/code-list-descriptions.json` left on an old edition.
+ * `specs/sources.json` and reports what differs from the fingerprints saved there. With
+ * `--editions`, it reports instead the yearly sources of `specs/code-list-descriptions.json` left on
+ * an old edition: two separate checks, each with its own issue, so that one doesn't hide the other.
  *
  *   node scripts/spec-watch.ts                  # compare and print the differences
  *   node scripts/spec-watch.ts --update         # save the current fingerprints
  *   node scripts/spec-watch.ts --report <file>  # also write the issue body, if something changed
  *   node scripts/spec-watch.ts --out <file>     # also write the current fingerprints
+ *   node scripts/spec-watch.ts --editions [--report <file>]  # check the editions only
  */
 
 /**
@@ -24,29 +27,40 @@ export type Source =
 
 export type Change =
   | { kind: 'file'; name: string; url: string; before?: string; after: string }
-  | { kind: 'page'; name: string; url: string; added: string[]; removed: string[] }
-  | { kind: 'edition'; name: string; edition: string; year: number };
+  | { kind: 'page'; name: string; url: string; added: string[]; removed: string[] };
 
-/** A source of `specs/code-list-descriptions.json`, as far as the watcher cares. */
-export interface EditionSource {
+/** A watched source whose edition is older than `year`, the current one. */
+export interface EditionChange {
   name: string;
-  /** The year of the edition, for the sources that come out every year. */
   edition: string;
-  /** Whether a new edition comes out every year and the descriptions must follow it. */
-  yearly?: boolean;
+  year: number;
 }
+
+/** February, as `Date.getUTCMonth()` counts: by then the new edition of the CU is out. */
+const NEW_EDITION_MONTH = 1;
 
 /**
  * The yearly sources whose edition is of a past year, from 1 February on. A new edition of the
  * CU comes out in mid January at an address nobody can guess, so the watcher can't fetch it: it
  * can only tell, once the edition must be out, that the descriptions are still on the old one.
  */
-export function checkEditions(sources: Record<string, EditionSource>, today: Date): Change[] {
+export function checkEditions(
+  sources: Readonly<Record<string, Pick<DescriptionSource, 'name' | 'edition' | 'yearly'>>>,
+  today: Date,
+): EditionChange[] {
+  const yearly = Object.values(sources).filter((source) => source.yearly === true);
+  for (const source of yearly) {
+    if (!/^\d{4}$/.test(source.edition)) {
+      throw new Error(
+        `${source.name} comes out every year, but its edition ${source.edition} is not a year`,
+      );
+    }
+  }
   const year = today.getUTCFullYear();
-  if (today.getUTCMonth() === 0) return [];
-  return Object.values(sources)
-    .filter((source) => source.yearly === true && Number(source.edition) < year)
-    .map((source) => ({ kind: 'edition', name: source.name, edition: source.edition, year }));
+  if (today.getUTCMonth() < NEW_EDITION_MONTH) return [];
+  return yearly
+    .filter((source) => Number(source.edition) < year)
+    .map((source) => ({ name: source.name, edition: source.edition, year }));
 }
 
 /** Downloads every source and compares it with the saved fingerprint. */
@@ -105,13 +119,10 @@ function extractLinks(html: string, pageUrl: string, include: RegExp): string[] 
 
 /** The body of the issue that reports the changes, in Italian like every issue of the project. */
 export function renderIssue(changes: Change[]): string {
-  const fingerprints = changes.filter((change) => change.kind !== 'edition');
   const sections = [
-    fingerprints.length > 0
-      ? 'Il sorvegliante delle specifiche ha trovato differenze rispetto alle impronte salvate in `specs/sources.json`.'
-      : 'Il sorvegliante delle specifiche ha trovato qualcosa da controllare.',
+    'Il sorvegliante delle specifiche ha trovato differenze rispetto alle impronte salvate in `specs/sources.json`.',
   ];
-  for (const change of fingerprints) {
+  for (const change of changes) {
     if (change.kind === 'page') {
       const lines = [`## ${change.name}`, `Pagina: ${change.url}`];
       if (change.added.length > 0) lines.push(linkList('Collegamenti nuovi:', change.added));
@@ -128,32 +139,36 @@ export function renderIssue(changes: Change[]): string {
       );
     }
   }
-  if (fingerprints.length > 0) {
-    sections.push(
-      [
-        '## Cosa fare',
-        '1. Leggere i documenti cambiati e decidere se toccano la libreria (XSD, controlli, codici).\n' +
-          '2. Aggiornare le impronte con `pnpm specs:watch --update` e committare `specs/sources.json`, anche se la libreria non cambia.',
-      ].join('\n\n'),
-    );
-  }
-  for (const change of changes) {
-    if (change.kind === 'edition') sections.push(editionSection(change));
-  }
+  sections.push(
+    [
+      '## Cosa fare',
+      '1. Leggere i documenti cambiati e decidere se toccano la libreria (XSD, controlli, codici).\n' +
+        '2. Aggiornare le impronte con `pnpm specs:watch --update` e committare `specs/sources.json`, anche se la libreria non cambia.',
+    ].join('\n\n'),
+  );
   return `${sections.join('\n\n')}\n`;
 }
 
-function editionSection(change: Extract<Change, { kind: 'edition' }>): string {
-  return [
-    `## ${change.name}`,
-    `Le descrizioni dei codici in \`specs/code-list-descriptions.json\` vengono dall'edizione ${change.edition}, ma dal 1° febbraio deve essere uscita l'edizione ${change.year}. Il suo indirizzo cambia ogni anno, quindi il sorvegliante non può scaricarla da solo.`,
-    [
-      `1. Cercare l'edizione ${change.year} sul sito dell'Agenzia delle Entrate.`,
-      "2. Confrontare i testi delle voci che citano questa fonte con quelli della nuova edizione, e i codici che toglie o aggiunge con quelli dell'XSD.",
-      "3. Aggiornare in `specs/code-list-descriptions.json` nome, URL, SHA-256, edizione, pagine e testi, poi `pnpm generate`. Un testo cambiato è una versione `minor` che nomina l'edizione nel changelog.",
-      "4. Aggiornare in `specs/sources.json` le pagine dell'anno della fonte.",
-    ].join('\n'),
-  ].join('\n\n');
+/** The body of the issue that reports the editions to update, in Italian. */
+export function renderEditionIssue(changes: EditionChange[]): string {
+  const sections = [
+    "Il sorvegliante delle specifiche ha trovato descrizioni dei codici ferme a un'edizione passata della loro fonte.",
+  ];
+  for (const change of changes) {
+    sections.push(
+      [
+        `## ${change.name}`,
+        `Le descrizioni dei codici in \`specs/code-list-descriptions.json\` vengono dall'edizione ${change.edition}, ma dal 1° febbraio deve essere uscita l'edizione ${change.year}. Il suo indirizzo cambia ogni anno, quindi il sorvegliante non può scaricarla da solo.`,
+        [
+          `1. Cercare l'edizione ${change.year} sul sito dell'Agenzia delle Entrate.`,
+          "2. Confrontare i testi delle voci che citano questa fonte con quelli della nuova edizione, e i codici che toglie o aggiunge con quelli dell'XSD.",
+          "3. Aggiornare in `specs/code-list-descriptions.json` nome, URL, SHA-256, edizione, pagine e testi, poi `pnpm generate`. Un testo cambiato è una versione `minor` che nomina l'edizione nel changelog.",
+          "4. Aggiornare in `specs/sources.json` le pagine dell'anno della fonte.",
+        ].join('\n'),
+      ].join('\n\n'),
+    );
+  }
+  return `${sections.join('\n\n')}\n`;
 }
 
 function linkList(title: string, links: string[]): string {
@@ -179,22 +194,35 @@ async function main(): Promise<void> {
   const { values } = parseArgs({
     options: {
       update: { type: 'boolean', default: false },
+      editions: { type: 'boolean', default: false },
       report: { type: 'string' },
       out: { type: 'string' },
     },
   });
+
+  if (values.editions) {
+    const descriptions = JSON.parse(await readFile(DESCRIPTIONS_PATH, 'utf8')) as {
+      sources: Record<string, DescriptionSource>;
+    };
+    const changes = checkEditions(descriptions.sources, new Date());
+    if (changes.length === 0) {
+      console.log('No edition to update.');
+      return;
+    }
+    const body = renderEditionIssue(changes);
+    if (values.report !== undefined) await writeFile(values.report, body);
+    console.log(body);
+    return;
+  }
+
   const saved = JSON.parse(await readFile(SOURCES_PATH, 'utf8')) as Source[];
-  const { sources, changes: fingerprints } = await checkSources(saved, fetchBytes);
-  const descriptions = JSON.parse(await readFile(DESCRIPTIONS_PATH, 'utf8')) as {
-    sources: Record<string, EditionSource>;
-  };
-  const changes = [...fingerprints, ...checkEditions(descriptions.sources, new Date())];
+  const { sources, changes } = await checkSources(saved, fetchBytes);
   const json = `${JSON.stringify(sources, null, 2)}\n`;
 
   if (values.out !== undefined) await writeFile(values.out, json);
   if (values.update) await writeFile(SOURCES_PATH, json);
   if (changes.length === 0) {
-    console.log(`No changes in ${sources.length} sources, no edition to update.`);
+    console.log(`No changes in ${sources.length} sources.`);
     return;
   }
   const body = renderIssue(changes);
