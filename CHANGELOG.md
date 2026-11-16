@@ -1,5 +1,28 @@
 # fattura-elettronica-ts
 
+## 0.2.0
+
+### Modifiche minor
+
+- 472cc3e: `codeLists` ha ora la descrizione di tutti i codici. I due elenchi che nello schema XSD ne erano
+  privi la prendono da altri documenti ufficiali, con il testo integrale:
+  
+  - `CausalePagamento`: dalle istruzioni della Certificazione Unica 2026 (aggiornamento del
+    24/02/2026). `X` e `Y`, tolti dalla CU dal 2025, hanno il testo della CU 2024. `Z` ha il testo di
+    `ZO`, il codice che rappresentava. Nella descrizione di `W` manca l'anno («nel 2025»), che cambia
+    a ogni edizione.
+  - `BolloVirtuale`: `SI` ha il testo della Rappresentazione tabellare della fattura ordinaria.
+  
+  Una nuova edizione della CU che cambia un testo arriverà come versione `minor`, e il changelog dirà
+  di quale edizione si tratta.
+
+### Modifiche patch
+
+- 755bbbf: `validate` non giudica più con i controlli del SdI una `Natura` che lo schema XSD rifiuta (vuota o
+  con un codice sconosciuto): resta il solo errore `xsd.enumeration`. Prima, ad esempio, una `Natura`
+  vuota su un riepilogo al 22% dava anche `sdi.00430`, l'avviso `sdi.00444.warn` e l'avviso
+  `warn.riferimentoNormativo`.
+
 ## 0.1.0
 
 ### Modifiche minor
